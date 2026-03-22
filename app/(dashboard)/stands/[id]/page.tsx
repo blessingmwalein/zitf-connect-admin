@@ -5,13 +5,14 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, User } from "lucide-react";
+import { ArrowLeft, Loader2, User, UserPlus, UserX } from "lucide-react";
 import Link from "next/link";
 
 import { standSchema, type StandFormData } from "@/lib/validators/stand";
-import { updateStand as updateStandService, getStandById } from "@/services/stand.service";
+import { updateStand as updateStandService, getStandById, assignExhibitorToStand, unassignStand } from "@/services/stand.service";
 import { getHalls } from "@/services/hall.service";
 import { getHallById } from "@/services/hall.service";
+import { getExhibitorsList } from "@/services/exhibitor.service";
 import {
   STAND_STATUS_CONFIG,
   type StandStatus,
@@ -27,7 +28,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
+
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -57,6 +58,7 @@ interface StandData {
   area_sqm: number;
   price: number;
   notes: string;
+  exhibitor_id: string | null;
   exhibitor_name: string | null;
   geo_polygon: GeoPoint[] | null;
   hall_geo_polygon: GeoPoint[] | null;
@@ -74,53 +76,100 @@ export default function StandDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stand, setStand] = useState<StandData | null>(null);
   const [halls, setHalls] = useState<{ id: string; name: string }[]>([]);
+  const [exhibitors, setExhibitors] = useState<{ id: string; company_name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState(false);
+
+  async function loadData() {
+    try {
+      const [standRes, hallsRes, exhRes] = await Promise.all([
+        getStandById(id),
+        getHalls(),
+        getExhibitorsList(),
+      ]) as [any, any, any];
+
+      let hallGeoPolygon: GeoPoint[] | null = null;
+      if (standRes.data) {
+        const s = standRes.data;
+        try {
+          const hallRes = await getHallById(s.hall_id) as any;
+          if (hallRes.data?.geo_polygon) {
+            hallGeoPolygon = hallRes.data.geo_polygon;
+          }
+        } catch {
+          // Hall geo data unavailable
+        }
+        setStand({
+          id: s.id,
+          stand_number: s.stand_number,
+          hall_id: s.hall_id,
+          hall_name: s.halls?.name ?? "Unknown",
+          status: s.status as StandStatus,
+          area_sqm: s.area_sqm ?? 0,
+          price: s.price ?? 0,
+          notes: s.notes ?? "",
+          exhibitor_id: s.exhibitor_id ?? null,
+          exhibitor_name: s.exhibitors?.company_name ?? null,
+          geo_polygon: s.geo_polygon ?? null,
+          hall_geo_polygon: hallGeoPolygon,
+        });
+      }
+      if (hallsRes.data) {
+        setHalls(hallsRes.data.map((h: any) => ({ id: h.id, name: h.name })));
+      }
+      if (exhRes.data) {
+        setExhibitors(exhRes.data);
+      }
+    } catch {
+      // Failed to load
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [standRes, hallsRes] = await Promise.all([
-          getStandById(id),
-          getHalls(),
-        ]) as [any, any];
-
-        let hallGeoPolygon: GeoPoint[] | null = null;
-        if (standRes.data) {
-          const s = standRes.data;
-          // Fetch the parent hall's geo_polygon for context
-          try {
-            const hallRes = await getHallById(s.hall_id) as any;
-            if (hallRes.data?.geo_polygon) {
-              hallGeoPolygon = hallRes.data.geo_polygon;
-            }
-          } catch {
-            // Hall geo data unavailable
-          }
-          setStand({
-            id: s.id,
-            stand_number: s.stand_number,
-            hall_id: s.hall_id,
-            hall_name: s.halls?.name ?? "Unknown",
-            status: s.status as StandStatus,
-            area_sqm: s.area_sqm ?? 0,
-            price: s.price ?? 0,
-            notes: s.notes ?? "",
-            exhibitor_name: s.exhibitors?.company_name ?? null,
-            geo_polygon: s.geo_polygon ?? null,
-            hall_geo_polygon: hallGeoPolygon,
-          });
-        }
-        if (hallsRes.data) {
-          setHalls(hallsRes.data.map((h: any) => ({ id: h.id, name: h.name })));
-        }
-      } catch {
-        // Failed to load
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  async function handleAssignExhibitor(exhibitorId: string) {
+    if (!stand) return;
+    setAssigning(true);
+    try {
+      const result = await assignExhibitorToStand(stand.id, exhibitorId) as any;
+      if (result.error) {
+        toast.error("Failed to assign exhibitor", { description: result.error.message });
+      } else {
+        toast.success("Exhibitor assigned");
+        // Reload data to reflect changes
+        setLoading(true);
+        await loadData();
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function handleUnassignExhibitor() {
+    if (!stand) return;
+    setAssigning(true);
+    try {
+      const result = await unassignStand(stand.id) as any;
+      if (result.error) {
+        toast.error("Failed to unassign exhibitor", { description: result.error.message });
+      } else {
+        toast.success("Exhibitor unassigned");
+        setLoading(true);
+        await loadData();
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setAssigning(false);
+    }
+  }
 
   const {
     register,
@@ -357,30 +406,60 @@ export default function StandDetailPage() {
             </CardHeader>
             <CardContent>
               {stand.exhibitor_name ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-ios-blue/10">
-                    <User className="size-5 text-ios-blue" />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-ios-blue/10">
+                      <User className="size-5 text-ios-blue" />
+                    </div>
+                    <div className="flex-1">
+                      <Link href={`/exhibitors/${stand.exhibitor_id}`} className="text-subheadline font-medium hover:underline">
+                        {stand.exhibitor_name}
+                      </Link>
+                      <Badge className={cn("mt-1 text-caption-2", statusConfig.color)}>
+                        {statusConfig.label}
+                      </Badge>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-subheadline font-medium">
-                      {stand.exhibitor_name}
-                    </p>
-                    <Badge className={cn("mt-1 text-caption-2", statusConfig.color)}>
-                      {statusConfig.label}
-                    </Badge>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-1.5 text-destructive hover:text-destructive"
+                    onClick={handleUnassignExhibitor}
+                    disabled={assigning}
+                  >
+                    {assigning ? <Loader2 className="size-3.5 animate-spin" /> : <UserX className="size-3.5" />}
+                    Unassign Exhibitor
+                  </Button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center py-4 text-center">
-                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                    <User className="size-5 text-muted-foreground" />
+                <div className="space-y-3">
+                  <div className="flex flex-col items-center py-2 text-center">
+                    <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
+                      <User className="size-5 text-muted-foreground" />
+                    </div>
+                    <p className="text-footnote text-muted-foreground">
+                      Unassigned
+                    </p>
                   </div>
-                  <p className="text-footnote text-muted-foreground">
-                    Unassigned
-                  </p>
-                  <p className="mt-0.5 text-caption-1 text-muted-foreground">
-                    No exhibitor has been assigned to this stand.
-                  </p>
+                  <div className="space-y-2">
+                    <Label className="text-caption-1">Assign Exhibitor</Label>
+                    <Select
+                      value=""
+                      onValueChange={(val) => val && handleAssignExhibitor(val)}
+                      disabled={assigning}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={assigning ? "Assigning..." : "Select exhibitor"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {exhibitors.map((ex) => (
+                          <SelectItem key={ex.id} value={ex.id}>
+                            {ex.company_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               )}
             </CardContent>

@@ -6,7 +6,7 @@ import { MapSkeleton } from "./map-skeleton";
 
 const HallPolygonEditorInner = dynamic(
   () => import("./hall-polygon-editor-inner").then((m) => m.HallPolygonEditorInner),
-  { ssr: false, loading: () => <MapSkeleton className="h-[350px]" /> }
+  { ssr: false, loading: () => <MapSkeleton className="h-[300px] md:h-[400px] lg:h-[500px]" /> }
 );
 
 interface HallPolygonEditorProps {

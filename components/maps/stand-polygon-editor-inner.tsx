@@ -1,6 +1,8 @@
 "use client";
 
-import { MapContainer, TileLayer, Polygon } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Polygon, useMap } from "react-leaflet";
+import L from "leaflet";
 import { PolygonDrawControl } from "./polygon-draw-control";
 import type { GeoPoint } from "@/types/database.types";
 import { ZITF_CENTER, ZITF_DEFAULT_ZOOM } from "./map-container-inner";
@@ -12,27 +14,40 @@ interface Props {
   onChange: (coords: GeoPoint[]) => void;
 }
 
+/** Fits the map to the hall boundary and locks panning to it */
+function FitToHall({ hallPolygon }: { hallPolygon: GeoPoint[] }) {
+  const map = useMap();
+  useEffect(() => {
+    const bounds = L.latLngBounds(hallPolygon.map(([lat, lng]) => L.latLng(lat, lng)));
+    const padded = bounds.pad(0.3);
+    map.fitBounds(padded);
+    map.setMaxBounds(padded);
+    map.setMinZoom(map.getZoom() - 2);
+  }, [map, hallPolygon]);
+  return null;
+}
+
 export function StandPolygonEditorInner({
   hallPolygon,
   standPolygon,
   onChange,
 }: Props) {
-  const center =
-    hallPolygon && hallPolygon.length >= 3
-      ? getCentroid(hallPolygon)
-      : standPolygon && standPolygon.length >= 3
-        ? getCentroid(standPolygon)
-        : ZITF_CENTER;
+  const hasHall = hallPolygon && hallPolygon.length >= 3;
 
-  const zoom =
-    hallPolygon && hallPolygon.length >= 3 ? 19 : ZITF_DEFAULT_ZOOM;
+  const center = hasHall
+    ? getCentroid(hallPolygon)
+    : standPolygon && standPolygon.length >= 3
+      ? getCentroid(standPolygon)
+      : ZITF_CENTER;
+
+  const zoom = hasHall ? 19 : ZITF_DEFAULT_ZOOM;
 
   return (
     <MapContainer
       center={center}
       zoom={zoom}
       scrollWheelZoom={true}
-      className="h-[300px] w-full rounded-xl"
+      className="h-[300px] md:h-[400px] lg:h-[500px] w-full rounded-xl"
       style={{ zIndex: 0 }}
     >
       <TileLayer
@@ -40,8 +55,11 @@ export function StandPolygonEditorInner({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
+      {/* Lock map to hall boundary */}
+      {hasHall && <FitToHall hallPolygon={hallPolygon} />}
+
       {/* Hall boundary as context (read-only) */}
-      {hallPolygon && hallPolygon.length >= 3 && (
+      {hasHall && (
         <Polygon
           positions={hallPolygon}
           pathOptions={{

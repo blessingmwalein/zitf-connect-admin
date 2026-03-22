@@ -1,15 +1,27 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { ExhibitorForm } from "@/components/features/exhibitors/exhibitor-form";
 import { createExhibitor } from "@/services/exhibitor.service";
+import { getHalls } from "@/services/hall.service";
 import type { ExhibitorFormData } from "@/lib/validators/exhibitor";
+import type { Hall } from "@/types/database.types";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function NewExhibitorPage() {
   const router = useRouter();
+  const [halls, setHalls] = useState<Pick<Hall, "id" | "name">[]>([]);
+
+  useEffect(() => {
+    getHalls().then((res) => {
+      if (res.data) {
+        setHalls(res.data.map((h: { id: string; name: string }) => ({ id: h.id, name: h.name })));
+      }
+    });
+  }, []);
 
   async function handleSubmit(data: ExhibitorFormData) {
     try {
@@ -38,7 +50,7 @@ export default function NewExhibitorPage() {
 
       <Card className="rounded-2xl border bg-card shadow-ios">
         <CardContent className="p-6">
-          <ExhibitorForm onSubmit={handleSubmit} />
+          <ExhibitorForm halls={halls} onSubmit={handleSubmit} />
         </CardContent>
       </Card>
     </div>

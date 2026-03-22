@@ -89,48 +89,48 @@
    Light Mode - iOS System Colors
    ============================================ */
 :root {
-  /* ShadCN semantic tokens */
-  --background: oklch(0.968 0.003 264.542);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.585 0.233 264.052);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.968 0.003 264.542);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.968 0.003 264.542);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.968 0.003 264.542);
-  --accent-foreground: oklch(0.205 0 0);
+  /* ShadCN semantic tokens - ZITF Brand */
+  --background: #FDFCF8;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --primary: #F69825;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F7F5F0;
+  --secondary-foreground: #1A1A1A;
+  --muted: #F7F5F0;
+  --muted-foreground: #666666;
+  --accent: #F7F5F0;
+  --accent-foreground: #1A1A1A;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.902 0.004 264.542);
-  --input: oklch(0.902 0.004 264.542);
-  --ring: oklch(0.585 0.233 264.052);
+  --border: #E8E4DD;
+  --input: #E8E4DD;
+  --ring: #F69825;
   --radius: 0.75rem;
 
-  /* Chart colors - iOS-inspired spectrum */
-  --chart-1: oklch(0.585 0.233 264.052);
+  /* Chart colors - ZITF palette */
+  --chart-1: #F69825;
   --chart-2: oklch(0.72 0.19 152.535);
   --chart-3: oklch(0.75 0.183 55.934);
   --chart-4: oklch(0.645 0.246 16.439);
   --chart-5: oklch(0.62 0.214 307.706);
 
   /* Sidebar */
-  --sidebar: oklch(0.968 0.003 264.542);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.585 0.233 264.052);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.937 0.01 264.542);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.902 0.004 264.542);
-  --sidebar-ring: oklch(0.585 0.233 264.052);
+  --sidebar: #FDFCF8;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-primary: #F69825;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F7F5F0;
+  --sidebar-accent-foreground: #1A1A1A;
+  --sidebar-border: #E8E4DD;
+  --sidebar-ring: #F69825;
 
   /* iOS system colors */
   --ios-blue: #007AFF;
   --ios-green: #34C759;
-  --ios-orange: #FF9500;
+  --ios-orange: #F69825;
   --ios-red: #FF3B30;
   --ios-teal: #5AC8FA;
   --ios-purple: #AF52DE;
@@ -159,8 +159,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.178 0.004 285.823);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.63 0.25 264.052);
-  --primary-foreground: oklch(1 0 0);
+  --primary: #F69825;
+  --primary-foreground: #FFFFFF;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -170,10 +170,10 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.63 0.25 264.052);
+  --ring: #F69825;
 
   /* Chart colors */
-  --chart-1: oklch(0.63 0.25 264.052);
+  --chart-1: #F69825;
   --chart-2: oklch(0.72 0.19 152.535);
   --chart-3: oklch(0.75 0.183 55.934);
   --chart-4: oklch(0.704 0.191 22.216);
@@ -182,17 +182,17 @@
   /* Sidebar */
   --sidebar: oklch(0 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.63 0.25 264.052);
-  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-primary: #F69825;
+  --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.63 0.25 264.052);
+  --sidebar-ring: #F69825;
 
   /* iOS system colors (dark) */
   --ios-blue: #0A84FF;
   --ios-green: #30D158;
-  --ios-orange: #FF9F0A;
+  --ios-orange: #F69825;
   --ios-red: #FF453A;
   --ios-teal: #64D2FF;
   --ios-purple: #BF5AF2;
@@ -375,10 +375,10 @@
 
 /* Selection color */
 ::selection {
-  background: oklch(0.585 0.233 264.052 / 0.2);
+  background: rgb(246 152 37 / 0.2);
 }
 .dark ::selection {
-  background: oklch(0.63 0.25 264.052 / 0.3);
+  background: rgb(246 152 37 / 0.3);
 }
 
 /* ============================================
@@ -387,6 +387,27 @@
 .leaflet-container {
   font-family: var(--font-sans);
   border-radius: var(--radius);
+}
+
+/* Ensure leaflet-draw toolbar buttons are visible (Tailwind resets background-image) */
+.leaflet-draw-toolbar a {
+  background-image: url("https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png") !important;
+  background-repeat: no-repeat !important;
+  background-size: 300px 30px !important;
+}
+.leaflet-draw-toolbar .leaflet-draw-draw-polygon {
+  background-position: -2px -2px !important;
+}
+.leaflet-draw-toolbar .leaflet-draw-edit-edit {
+  background-position: -152px -2px !important;
+}
+.leaflet-draw-toolbar .leaflet-draw-edit-remove {
+  background-position: -182px -2px !important;
+}
+.leaflet-draw-toolbar a {
+  display: block !important;
+  width: 30px !important;
+  height: 30px !important;
 }
 .leaflet-popup-content-wrapper {
   border-radius: 0.75rem !important;

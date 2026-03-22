@@ -72,7 +72,7 @@ export function LoginForm() {
               placeholder="admin@zitf.com"
               autoComplete="email"
               {...register("email")}
-              className="h-11 rounded-xl bg-secondary/50"
+              className="h-11  bg-secondary/50"
             />
             {errors.email && (
               <p className="text-caption-1 text-destructive">
@@ -89,7 +89,7 @@ export function LoginForm() {
               placeholder="Enter your password"
               autoComplete="current-password"
               {...register("password")}
-              className="h-11 rounded-xl bg-secondary/50"
+              className="h-11  bg-secondary/50"
             />
             {errors.password && (
               <p className="text-caption-1 text-destructive">
@@ -101,7 +101,7 @@ export function LoginForm() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="h-11 w-full rounded-2xl font-semibold ios-press"
+            className="h-11 w-full  font-semibold ios-press"
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
@@ -127,7 +127,7 @@ export function LoginForm() {
             <Button
               type="button"
               variant="outline"
-              className="h-11 flex-1 rounded-2xl"
+              className="h-11 flex-1 "
               onClick={() => signInWithOAuth("google")}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@ export function LoginForm() {
             <Button
               type="button"
               variant="outline"
-              className="h-11 flex-1 rounded-2xl"
+              className="h-11 flex-1 "
               onClick={() => signInWithOAuth("apple")}
             >
               <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

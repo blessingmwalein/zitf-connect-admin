@@ -2,8 +2,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Users, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Search, Users, MapPin, MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -20,6 +23,15 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { deleteHall } from "@/services/hall.service";
 import { cn } from "@/lib/utils";
 
 interface HallItem {
@@ -43,25 +55,42 @@ interface HallsClientProps {
 }
 
 export function HallsClient({ halls }: HallsClientProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return halls.filter((hall) => {
       const matchesSearch = hall.name
         .toLowerCase()
         .includes(search.toLowerCase());
-
       const matchesStatus =
         statusFilter === "all"
           ? true
           : statusFilter === "active"
             ? hall.is_active
             : !hall.is_active;
-
       return matchesSearch && matchesStatus;
     });
   }, [halls, search, statusFilter]);
+
+  async function handleDelete() {
+    if (!deleteId) return;
+    try {
+      const result = await deleteHall(deleteId);
+      if (result.error) {
+        toast.error("Failed to delete hall", { description: result.error.message });
+        return;
+      }
+      toast.success("Hall deleted");
+      router.refresh();
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setDeleteId(null);
+    }
+  }
 
   return (
     <>
@@ -107,10 +136,39 @@ export function HallsClient({ halls }: HallsClientProps) {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((hall) => (
-            <Link key={hall.id} href={`/halls/${hall.id}`} className="group">
-              <Card className="ios-card transition-shadow hover:shadow-lg">
+            <Card key={hall.id} className="ios-card relative transition-shadow hover:shadow-lg">
+              {/* Action menu */}
+              <div className="absolute right-3 top-3 z-10">
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <Button variant="ghost" size="icon" className="size-8 bg-background/80 backdrop-blur-sm">
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => router.push(`/halls/${hall.id}`)}>
+                      <Eye className="mr-2 size-4" />
+                      View
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push(`/halls/${hall.id}/edit`)}>
+                      <Pencil className="mr-2 size-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => setDeleteId(hall.id)}
+                    >
+                      <Trash2 className="mr-2 size-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <Link href={`/halls/${hall.id}`} className="group">
                 <CardHeader>
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between pr-10">
                     <CardTitle className="text-headline">{hall.name}</CardTitle>
                     <Badge
                       className={cn(
@@ -151,11 +209,21 @@ export function HallsClient({ halls }: HallsClientProps) {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            </Link>
+              </Link>
+            </Card>
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete Hall"
+        description="Are you sure you want to delete this hall? All stands in this hall will be unassigned."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

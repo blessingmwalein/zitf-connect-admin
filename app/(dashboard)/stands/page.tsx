@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { getStands } from "@/services/stand.service";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { StandsClient } from "./stands-client";
 import type { StandStatus } from "@/lib/constants";
 
@@ -39,7 +42,14 @@ export default async function StandsPage() {
       <PageHeader
         title="Stands"
         description="View and manage exhibition stands across all halls"
-      />
+      >
+        <Link href="/stands/new">
+          <Button className="gap-1.5">
+            <Plus className="size-4" />
+            Add Stands
+          </Button>
+        </Link>
+      </PageHeader>
       <StandsClient stands={stands} />
     </div>
   );

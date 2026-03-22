@@ -7,7 +7,7 @@ import type { StandStatus } from "@/lib/constants";
 
 const HallMapViewerInner = dynamic(
   () => import("./hall-map-viewer-inner").then((m) => m.HallMapViewerInner),
-  { ssr: false, loading: () => <MapSkeleton className="h-[400px]" /> }
+  { ssr: false, loading: () => <MapSkeleton className="h-[300px] md:h-[400px] lg:h-[500px]" /> }
 );
 
 export interface HallStandData {

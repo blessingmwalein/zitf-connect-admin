@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, MapPin, Users, Edit } from "lucide-react";
+import { ArrowLeft, MapPin, Users, Edit, Pencil, Trash2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getHallById } from "@/services/hall.service";
 import { getStandsByHall } from "@/services/stand.service";
@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import type { StandStatus } from "@/lib/constants";
 import { STAND_STATUS_CONFIG } from "@/lib/constants";
 import { HallMapSection } from "./hall-map-section";
+import { HallDeleteButton } from "./hall-delete-button";
 
 const STATUS_BG: Record<StandStatus, string> = {
   available: "bg-ios-green/20 border-ios-green/40",
@@ -94,12 +95,21 @@ export default async function HallDetailPage({
   return (
     <div className="space-y-6">
       <PageHeader title={hall.name} description={hall.description}>
-        <Link href="/halls">
-          <Button variant="outline">
-            <ArrowLeft className="size-4" />
-            Back
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/halls/${id}/edit`}>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Pencil className="size-4" />
+              Edit
+            </Button>
+          </Link>
+          <HallDeleteButton hallId={id} />
+          <Link href="/halls">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="size-4" />
+              Back
+            </Button>
+          </Link>
+        </div>
       </PageHeader>
 
       {/* Hall info summary */}
@@ -149,7 +159,7 @@ export default async function HallDetailPage({
         </Card>
       </div>
 
-      {/* Hall map — polygon editor for hall boundary + stand visualization */}
+      {/* Hall map */}
       <HallMapSection hall={hall} stands={stands} />
 
       {/* Stands list */}

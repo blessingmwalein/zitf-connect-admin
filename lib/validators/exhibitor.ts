@@ -11,7 +11,9 @@ export const exhibitorSchema = z.object({
     .enum(["pending", "approved", "rejected", "active", "inactive"])
     .default("pending"),
   country: z.string().optional(),
-  industry: z.string().optional(),
+  category_id: z.coerce.number().optional().nullable(),
+  hall_id: z.string().uuid().optional().nullable().or(z.literal("")),
+  logo_url: z.string().optional().nullable(),
   booth_size: z.string().optional(),
   notes: z.string().optional(),
 });

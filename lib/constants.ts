@@ -6,6 +6,7 @@ import {
   BarChart3,
   Settings,
   Users,
+  Map,
   type LucideIcon,
 } from "lucide-react";
 
@@ -50,6 +51,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/events",
     icon: Calendar,
     description: "Schedule events",
+  },
+  {
+    title: "Venue Map",
+    href: "/venue-map",
+    icon: Map,
+    description: "Interactive venue map",
   },
   {
     title: "Analytics",

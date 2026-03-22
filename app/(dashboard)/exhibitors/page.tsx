@@ -80,7 +80,7 @@ export default function ExhibitorsPage() {
       >
         <Button
           render={<Link href="/exhibitors/new" />}
-          className="h-11 rounded-2xl font-semibold ios-press"
+          className="h-11 rounded-full font-semibold ios-press"
         >
           <Plus className="size-4" />
           Add Exhibitor

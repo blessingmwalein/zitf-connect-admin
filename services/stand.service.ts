@@ -77,6 +77,68 @@ export async function assignExhibitorToStand(
   return result;
 }
 
+export async function getUnassignedStands() {
+  const supabase = await createClient();
+  return supabase
+    .from("stands")
+    .select("*, halls(name)")
+    .is("hall_id", null)
+    .order("stand_number");
+}
+
+export async function bulkAssignStandsToHall(
+  standIds: string[],
+  hallId: string
+) {
+  const supabase = await createClient();
+  const result = await supabase
+    .from("stands")
+    .update({ hall_id: hallId } as never)
+    .in("id", standIds)
+    .select();
+  if (!result.error) {
+    revalidatePath("/stands");
+    revalidatePath("/halls");
+  }
+  return result;
+}
+
+export async function bulkCreateStands(stands: StandInsert[]) {
+  const supabase = await createClient();
+  const result = await supabase
+    .from("stands")
+    .insert(stands as never[])
+    .select();
+  if (!result.error) revalidatePath("/stands");
+  return result;
+}
+
+/** Get stands available for assignment (no exhibitor) or already assigned to a specific exhibitor */
+export async function getAvailableStands(currentExhibitorId?: string) {
+  const supabase = await createClient();
+  // Get stands with no exhibitor assigned
+  let query = supabase
+    .from("stands")
+    .select("id, stand_number, hall_id, halls(name)")
+    .is("exhibitor_id", null)
+    .order("stand_number");
+
+  const { data: available, error } = await query;
+  if (error) return { data: null, error };
+
+  // Also get stands currently assigned to this exhibitor
+  if (currentExhibitorId) {
+    const { data: assigned } = await supabase
+      .from("stands")
+      .select("id, stand_number, hall_id, halls(name)")
+      .eq("exhibitor_id", currentExhibitorId)
+      .order("stand_number");
+    return { data: [...(available ?? []), ...(assigned ?? [])], error: null };
+  }
+
+  return { data: available, error: null };
+}
+
 export async function unassignStand(standId: string) {
   const supabase = await createClient();
   const result = await supabase

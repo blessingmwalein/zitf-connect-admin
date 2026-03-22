@@ -30,7 +30,7 @@ export function HallMapViewerInner({ hallPolygon, hallCenter, stands }: Props) {
       center={center}
       zoom={18}
       scrollWheelZoom={true}
-      className="h-[400px] w-full rounded-xl"
+      className="h-[300px] md:h-[400px] lg:h-[500px] w-full rounded-xl"
       style={{ zIndex: 0 }}
     >
       <TileLayer

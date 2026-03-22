@@ -2,11 +2,22 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  Search,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableHeader,
@@ -22,16 +33,21 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { cn } from "@/lib/utils";
 import {
   EXHIBITOR_STATUS_CONFIG,
   type ExhibitorStatus,
 } from "@/lib/constants";
+import { deleteExhibitor } from "@/services/exhibitor.service";
 import type { Exhibitor } from "@/types/database.types";
-
-/* ============================================
-   Types
-   ============================================ */
 
 type SortField = "company_name" | "status" | "country";
 type SortDirection = "asc" | "desc";
@@ -51,15 +67,12 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   })),
 ];
 
-/* ============================================
-   Component
-   ============================================ */
-
 export function ExhibitorsClient({
   exhibitors,
 }: {
   exhibitors: Exhibitor[];
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
@@ -68,8 +81,8 @@ export function ExhibitorsClient({
     direction: "asc",
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  /* ---------- Derived: unique countries ---------- */
   const countries = useMemo(() => {
     const unique = new Set<string>();
     for (const e of exhibitors) {
@@ -86,11 +99,9 @@ export function ExhibitorsClient({
     [countries],
   );
 
-  /* ---------- Filtered + sorted list ---------- */
   const processedExhibitors = useMemo(() => {
     let list = exhibitors;
 
-    // Search filter (company name)
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter((e) =>
@@ -98,17 +109,14 @@ export function ExhibitorsClient({
       );
     }
 
-    // Status filter
     if (statusFilter !== "all") {
       list = list.filter((e) => e.status === statusFilter);
     }
 
-    // Country filter
     if (countryFilter !== "all") {
       list = list.filter((e) => e.country === countryFilter);
     }
 
-    // Sort
     list = [...list].sort((a, b) => {
       let aVal = "";
       let bVal = "";
@@ -136,14 +144,12 @@ export function ExhibitorsClient({
     return list;
   }, [exhibitors, search, statusFilter, countryFilter, sort]);
 
-  /* ---------- Pagination ---------- */
   const totalPages = Math.max(1, Math.ceil(processedExhibitors.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * ITEMS_PER_PAGE;
   const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, processedExhibitors.length);
   const paginatedExhibitors = processedExhibitors.slice(startIndex, endIndex);
 
-  /* Reset to page 1 when filters change */
   function handleSearch(value: string) {
     setSearch(value);
     setCurrentPage(1);
@@ -159,7 +165,6 @@ export function ExhibitorsClient({
     setCurrentPage(1);
   }
 
-  /* ---------- Sort handler ---------- */
   function handleSort(field: SortField) {
     setSort((prev) => {
       if (prev.field === field) {
@@ -170,7 +175,23 @@ export function ExhibitorsClient({
     setCurrentPage(1);
   }
 
-  /* ---------- Sort icon ---------- */
+  async function handleDelete() {
+    if (!deleteId) return;
+    try {
+      const result = await deleteExhibitor(deleteId);
+      if (result.error) {
+        toast.error("Failed to delete exhibitor", { description: result.error.message });
+        return;
+      }
+      toast.success("Exhibitor deleted");
+      router.refresh();
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setDeleteId(null);
+    }
+  }
+
   function SortIcon({ field }: { field: SortField }) {
     if (sort.field !== field) {
       return <ChevronsUpDown className="size-3.5 text-muted-foreground/50" />;
@@ -186,7 +207,6 @@ export function ExhibitorsClient({
     <>
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Search */}
         <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -197,7 +217,6 @@ export function ExhibitorsClient({
           />
         </div>
 
-        {/* Status filter */}
         <Select value={statusFilter} onValueChange={handleStatusFilter}>
           <SelectTrigger className="h-9 min-w-[140px]">
             <SelectValue placeholder="All Statuses" />
@@ -211,7 +230,6 @@ export function ExhibitorsClient({
           </SelectContent>
         </Select>
 
-        {/* Country filter */}
         <Select value={countryFilter} onValueChange={handleCountryFilter}>
           <SelectTrigger className="h-9 min-w-[140px]">
             <SelectValue placeholder="All Countries" />
@@ -263,6 +281,7 @@ export function ExhibitorsClient({
                   <SortIcon field="country" />
                 </button>
               </TableHead>
+              <TableHead className="w-[60px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -284,6 +303,9 @@ export function ExhibitorsClient({
                       className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     >
                       <Avatar size="sm">
+                        {exhibitor.logo_url && (
+                          <AvatarImage src={exhibitor.logo_url} alt={exhibitor.company_name} />
+                        )}
                         <AvatarFallback>{initials}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium text-foreground">
@@ -308,13 +330,40 @@ export function ExhibitorsClient({
                   <TableCell className="text-muted-foreground">
                     {exhibitor.country ?? "\u2014"}
                   </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <MoreHorizontal className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => router.push(`/exhibitors/${exhibitor.id}`)}>
+                          <Eye className="mr-2 size-4" />
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/exhibitors/${exhibitor.id}/edit`)}>
+                          <Pencil className="mr-2 size-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setDeleteId(exhibitor.id)}
+                        >
+                          <Trash2 className="mr-2 size-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               );
             })}
             {paginatedExhibitors.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No exhibitors found.
@@ -324,7 +373,6 @@ export function ExhibitorsClient({
           </TableBody>
         </Table>
 
-        {/* Pagination */}
         {processedExhibitors.length > 0 && (
           <div className="flex items-center justify-between border-t px-4 py-3">
             <p className="text-sm text-muted-foreground">
@@ -357,6 +405,17 @@ export function ExhibitorsClient({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete Exhibitor"
+        description="Are you sure you want to delete this exhibitor? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

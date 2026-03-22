@@ -115,6 +115,8 @@ export type Database = {
           status: ExhibitorStatus;
           country: string | null;
           industry: string | null;
+          category_id: number | null;
+          hall_id: string | null;
           booth_size: string | null;
           notes: string | null;
           created_by: string | null;
@@ -133,6 +135,8 @@ export type Database = {
           status?: ExhibitorStatus;
           country?: string | null;
           industry?: string | null;
+          category_id?: number | null;
+          hall_id?: string | null;
           booth_size?: string | null;
           notes?: string | null;
           created_by?: string | null;
@@ -148,6 +152,8 @@ export type Database = {
           status?: ExhibitorStatus;
           country?: string | null;
           industry?: string | null;
+          category_id?: number | null;
+          hall_id?: string | null;
           booth_size?: string | null;
           notes?: string | null;
         };

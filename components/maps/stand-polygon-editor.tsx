@@ -6,7 +6,7 @@ import { MapSkeleton } from "./map-skeleton";
 
 const StandPolygonEditorInner = dynamic(
   () => import("./stand-polygon-editor-inner").then((m) => m.StandPolygonEditorInner),
-  { ssr: false, loading: () => <MapSkeleton className="h-[300px]" /> }
+  { ssr: false, loading: () => <MapSkeleton className="h-[300px] md:h-[400px] lg:h-[500px]" /> }
 );
 
 interface StandPolygonEditorProps {

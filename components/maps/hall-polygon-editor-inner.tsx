@@ -2,6 +2,7 @@
 
 import { MapContainer, TileLayer } from "react-leaflet";
 import { PolygonDrawControl } from "./polygon-draw-control";
+import { AddressSearchControl } from "./address-search-control";
 import type { GeoPoint } from "@/types/database.types";
 import { ZITF_CENTER, ZITF_DEFAULT_ZOOM } from "./map-container-inner";
 import "@/components/maps/leaflet-icons";
@@ -22,13 +23,14 @@ export function HallPolygonEditorInner({ polygon, onChange }: Props) {
       center={center}
       zoom={polygon && polygon.length >= 3 ? 18 : ZITF_DEFAULT_ZOOM}
       scrollWheelZoom={true}
-      className="h-[350px] w-full rounded-xl"
+      className="h-[300px] md:h-[400px] lg:h-[500px] w-full rounded-xl"
       style={{ zIndex: 0 }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <AddressSearchControl />
       <PolygonDrawControl
         existingPolygon={polygon}
         onPolygonChange={onChange}

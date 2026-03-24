@@ -48,6 +48,7 @@ export function ExhibitorForm({ initialData, halls = [], onSubmit }: ExhibitorFo
     formState: { errors },
   } = useForm<ExhibitorFormData>({
     resolver: zodResolver(exhibitorSchema) as Resolver<ExhibitorFormData>,
+    mode: "onTouched",
     defaultValues: initialData
       ? {
           company_name: initialData.company_name,
@@ -72,6 +73,13 @@ export function ExhibitorForm({ initialData, halls = [], onSubmit }: ExhibitorFo
   const currentStatus = watch("status");
   const currentCategoryId = watch("category_id");
   const currentHallId = watch("hall_id");
+
+  const selectedCategoryName = currentCategoryId
+    ? ZITF_CATEGORIES.find((c) => c.id === currentCategoryId)?.name
+    : null;
+  const selectedHallName = currentHallId
+    ? halls.find((h) => h.id === currentHallId)?.name
+    : null;
 
   async function handleLogoUpload(file: File) {
     setIsUploading(true);
@@ -111,7 +119,15 @@ export function ExhibitorForm({ initialData, halls = [], onSubmit }: ExhibitorFo
 
   return (
     <form
-      onSubmit={handleSubmit(handleFormSubmit)}
+      noValidate
+      onSubmit={handleSubmit(handleFormSubmit, (validationErrors) => {
+        const firstError = Object.values(validationErrors)[0];
+        if (firstError?.message) {
+          toast.error("Please fix form errors", {
+            description: String(firstError.message),
+          });
+        }
+      })}
       className="space-y-6"
     >
       {/* Company Information */}
@@ -176,7 +192,7 @@ export function ExhibitorForm({ initialData, halls = [], onSubmit }: ExhibitorFo
               }
             >
               <SelectTrigger className="h-11 w-full rounded-full bg-secondary/50">
-                <SelectValue placeholder="Select category" />
+                {selectedCategoryName || <SelectValue placeholder="Select category" />}
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
                 {ZITF_CATEGORIES.map((cat) => (
@@ -256,7 +272,7 @@ export function ExhibitorForm({ initialData, halls = [], onSubmit }: ExhibitorFo
               }
             >
               <SelectTrigger className="h-11 w-full rounded-full bg-secondary/50">
-                <SelectValue placeholder="Select hall (optional)" />
+                {selectedHallName || <SelectValue placeholder="Select hall (optional)" />}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">No hall assigned</SelectItem>
@@ -345,7 +361,9 @@ export function ExhibitorForm({ initialData, halls = [], onSubmit }: ExhibitorFo
               }
             >
               <SelectTrigger className="h-11 w-full rounded-full bg-secondary/50">
-                <SelectValue placeholder="Select status" />
+                {currentStatus
+                  ? EXHIBITOR_STATUS_CONFIG[currentStatus as keyof typeof EXHIBITOR_STATUS_CONFIG]?.label
+                  : <SelectValue placeholder="Select status" />}
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(EXHIBITOR_STATUS_CONFIG).map(

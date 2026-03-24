@@ -106,12 +106,18 @@ export function LoginForm() {
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
 
-          <div className="text-center">
+          <div className="flex flex-col items-center gap-1.5">
             <Link
               href="/forgot-password"
               className="text-footnote text-primary hover:underline"
             >
               Forgot password?
+            </Link>
+            <Link
+              href="/magic-link"
+              className="text-footnote text-muted-foreground hover:text-primary hover:underline transition-colors"
+            >
+              Sign in with magic link
             </Link>
           </div>
         </CardContent>

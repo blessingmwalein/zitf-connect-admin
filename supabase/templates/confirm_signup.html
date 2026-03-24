@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirm Your Account - ZITF Connect</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #FDFCF8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FDFCF8;">
+    <tr>
+      <td align="center" style="padding: 40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; background-color: #FFFFFF; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); overflow: hidden;">
+          <!-- Brand bar -->
+          <tr>
+            <td style="height: 4px; background: linear-gradient(90deg, #F69825, #E8872E, #3ABAB4);"></td>
+          </tr>
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding: 32px 32px 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background-color: #FFF5E6; border-radius: 12px; padding: 12px 20px;">
+                    <span style="font-size: 18px; font-weight: 700; color: #F69825; letter-spacing: -0.3px;">ZITF Connect</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 24px 32px 8px; text-align: center;">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #1A1A1A; line-height: 1.3;">Confirm Your Account</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 32px 24px; text-align: center;">
+              <p style="margin: 0; font-size: 15px; color: #6B7280; line-height: 1.6;">
+                Welcome to ZITF Connect! Click the button below to confirm your email address and activate your account.
+              </p>
+            </td>
+          </tr>
+          <!-- CTA Button -->
+          <tr>
+            <td align="center" style="padding: 8px 32px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background-color: #F69825; border-radius: 12px;">
+                    <a href="{{ .SiteURL }}/confirm?token_hash={{ .TokenHash }}&type=signup" target="_blank" style="display: inline-block; padding: 14px 40px; font-size: 15px; font-weight: 600; color: #FFFFFF; text-decoration: none; letter-spacing: 0.2px;">
+                      Confirm Your Account
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Divider -->
+          <tr>
+            <td style="padding: 0 32px;">
+              <div style="height: 1px; background-color: #F3F4F6;"></div>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 32px 28px; text-align: center;">
+              <p style="margin: 0; font-size: 12px; color: #9CA3AF; line-height: 1.5;">
+                If you didn't create an account, you can safely ignore this email.
+              </p>
+              <p style="margin: 12px 0 0; font-size: 11px; color: #D1D5DB;">
+                &copy; ZITF Connect
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

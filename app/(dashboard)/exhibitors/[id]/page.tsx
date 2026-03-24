@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ExhibitorDeleteButton } from "./exhibitor-delete-button";
+import { ExhibitorActions } from "@/components/features/exhibitors/exhibitor-actions";
 
 interface ExhibitorViewPageProps {
   params: Promise<{ id: string }>;
@@ -76,6 +77,12 @@ export default async function ExhibitorViewPage({
         description="Exhibitor details"
       >
         <div className="flex items-center gap-2">
+          <ExhibitorActions
+            exhibitorId={id}
+            currentStatus={exhibitor.status}
+            contactEmail={exhibitor.contact_email}
+            hasAuthAccount={!!exhibitor.auth_user_id}
+          />
           <Link href={`/exhibitors/${id}/badge`}>
             <Button variant="outline" size="sm" className="gap-1.5">
               <CreditCard className="size-4" />

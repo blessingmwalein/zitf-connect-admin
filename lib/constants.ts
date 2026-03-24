@@ -6,6 +6,7 @@ import {
   BarChart3,
   Settings,
   Users,
+  UserCheck,
   Map,
   type LucideIcon,
 } from "lucide-react";
@@ -33,6 +34,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/exhibitors",
     icon: Users,
     description: "Manage exhibitors",
+  },
+  {
+    title: "Visitors",
+    href: "/visitors",
+    icon: UserCheck,
+    description: "Manage visitors",
   },
   {
     title: "Halls",
@@ -76,9 +83,9 @@ export const NAV_ITEMS: NavItem[] = [
 export const TAB_BAR_ITEMS: NavItem[] = [
   NAV_ITEMS[0], // Overview
   NAV_ITEMS[1], // Exhibitors
-  NAV_ITEMS[4], // Events
-  NAV_ITEMS[2], // Halls
-  NAV_ITEMS[5], // Analytics
+  NAV_ITEMS[5], // Events
+  NAV_ITEMS[3], // Halls
+  NAV_ITEMS[7], // Analytics
 ];
 
 /* ============================================

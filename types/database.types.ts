@@ -119,6 +119,7 @@ export type Database = {
           hall_id: string | null;
           booth_size: string | null;
           notes: string | null;
+          auth_user_id: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -139,6 +140,7 @@ export type Database = {
           hall_id?: string | null;
           booth_size?: string | null;
           notes?: string | null;
+          auth_user_id?: string | null;
           created_by?: string | null;
         };
         Update: {
@@ -156,6 +158,7 @@ export type Database = {
           hall_id?: string | null;
           booth_size?: string | null;
           notes?: string | null;
+          auth_user_id?: string | null;
         };
       };
       stands: {
@@ -408,6 +411,8 @@ export type StandInsert = Database["public"]["Tables"]["stands"]["Insert"];
 export type StandUpdate = Database["public"]["Tables"]["stands"]["Update"];
 export type EventInsert = Database["public"]["Tables"]["events"]["Insert"];
 export type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
+export type VisitorInsert = Database["public"]["Tables"]["visitors"]["Insert"];
+export type VisitorUpdate = Database["public"]["Tables"]["visitors"]["Update"];
 
 export type LeadsPerExhibitor = Database["public"]["Views"]["v_leads_per_exhibitor"]["Row"];
 export type EventParticipation = Database["public"]["Views"]["v_event_participation"]["Row"];

@@ -346,6 +346,54 @@ export type Database = {
           metadata?: Json;
         };
       };
+      stand_features: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          default_price: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          default_price?: number;
+          is_active?: boolean;
+        };
+        Update: {
+          name?: string;
+          description?: string | null;
+          default_price?: number;
+          is_active?: boolean;
+        };
+      };
+      stand_feature_assignments: {
+        Row: {
+          id: string;
+          stand_id: string;
+          feature_id: string;
+          custom_price: number | null;
+          quantity: number;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          stand_id: string;
+          feature_id: string;
+          custom_price?: number | null;
+          quantity?: number;
+          notes?: string | null;
+        };
+        Update: {
+          custom_price?: number | null;
+          quantity?: number;
+          notes?: string | null;
+        };
+      };
     };
     Views: {
       v_leads_per_exhibitor: {
@@ -413,6 +461,13 @@ export type EventInsert = Database["public"]["Tables"]["events"]["Insert"];
 export type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 export type VisitorInsert = Database["public"]["Tables"]["visitors"]["Insert"];
 export type VisitorUpdate = Database["public"]["Tables"]["visitors"]["Update"];
+
+export type StandFeature = Database["public"]["Tables"]["stand_features"]["Row"];
+export type StandFeatureInsert = Database["public"]["Tables"]["stand_features"]["Insert"];
+export type StandFeatureUpdate = Database["public"]["Tables"]["stand_features"]["Update"];
+export type StandFeatureAssignment = Database["public"]["Tables"]["stand_feature_assignments"]["Row"];
+export type StandFeatureAssignmentInsert = Database["public"]["Tables"]["stand_feature_assignments"]["Insert"];
+export type StandFeatureAssignmentUpdate = Database["public"]["Tables"]["stand_feature_assignments"]["Update"];
 
 export type LeadsPerExhibitor = Database["public"]["Views"]["v_leads_per_exhibitor"]["Row"];
 export type EventParticipation = Database["public"]["Views"]["v_event_participation"]["Row"];

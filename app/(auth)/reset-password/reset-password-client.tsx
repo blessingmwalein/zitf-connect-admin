@@ -32,30 +32,23 @@ export function ResetPasswordClient() {
       const tokenHash = searchParams.get("token_hash");
       const type = searchParams.get("type");
 
-      // 1. Check if we have a recovery token
-      if (tokenHash && type === "recovery") {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: "recovery",
-        });
-
-        if (verifyError) {
-          setError(verifyError.message);
-          setPageState("error");
-          return;
-        }
-        setPageState("form");
+      if (!tokenHash || type !== "recovery") {
+        setError("Invalid or expired reset link. Please request a new one.");
+        setPageState("error");
         return;
       }
 
-      // 2. Check if we already have a session (e.g. redirected from callback)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setPageState("form");
-      } else {
-        setError("Invalid or expired reset link. Please request a new one.");
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: "recovery",
+      });
+
+      if (verifyError) {
+        setError(verifyError.message);
         setPageState("error");
+        return;
       }
+      setPageState("form");
     }
 
     checkSessionOrToken();

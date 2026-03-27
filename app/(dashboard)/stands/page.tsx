@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { StandsClient } from "./stands-client";
+import { ApplicationsPopover } from "./applications-popover";
 import type { StandStatus } from "@/lib/constants";
 
 export interface StandItem {
@@ -15,6 +16,7 @@ export interface StandItem {
   status: StandStatus;
   area_sqm: number;
   price: number;
+  features: string[];
 }
 
 export default async function StandsPage() {
@@ -31,6 +33,7 @@ export default async function StandsPage() {
         status: s.status as StandStatus,
         area_sqm: s.area_sqm ?? 0,
         price: s.price ?? 0,
+        features: s.stand_feature_assignments?.map((fa: any) => fa.stand_features?.name).filter(Boolean) ?? [],
       }));
     }
   } catch {
@@ -43,6 +46,7 @@ export default async function StandsPage() {
         title="Stands"
         description="View and manage exhibition stands across all halls"
       >
+        <ApplicationsPopover />
         <Link href="/stands/new">
           <Button className="gap-1.5">
             <Plus className="size-4" />

@@ -8,6 +8,7 @@ import {
   Users,
   UserCheck,
   Map,
+  Puzzle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -54,6 +55,12 @@ export const NAV_ITEMS: NavItem[] = [
     description: "Manage stands",
   },
   {
+    title: "Stand Features",
+    href: "/stands/features",
+    icon: Puzzle,
+    description: "Manage stand addons & features",
+  },
+  {
     title: "Events",
     href: "/events",
     icon: Calendar,
@@ -83,9 +90,9 @@ export const NAV_ITEMS: NavItem[] = [
 export const TAB_BAR_ITEMS: NavItem[] = [
   NAV_ITEMS[0], // Overview
   NAV_ITEMS[1], // Exhibitors
-  NAV_ITEMS[5], // Events
+  NAV_ITEMS[6], // Events
   NAV_ITEMS[3], // Halls
-  NAV_ITEMS[7], // Analytics
+  NAV_ITEMS[8], // Analytics
 ];
 
 /* ============================================

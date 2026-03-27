@@ -8,7 +8,7 @@ export async function getStands(opts?: { hallId?: string }) {
   const supabase = await createClient();
   let query = supabase
     .from("stands")
-    .select("*, exhibitors(id, company_name, logo_url), halls(name)")
+    .select("*, exhibitors(id, company_name, logo_url), halls(name), stand_feature_assignments(id, quantity, stand_features(name))")
     .order("stand_number");
 
   if (opts?.hallId) query = query.eq("hall_id", opts.hallId);
@@ -148,5 +148,67 @@ export async function unassignStand(standId: string) {
     .select()
     .single();
   if (!result.error) revalidatePath("/stands");
+  return result;
+}
+
+export async function getPendingStandApplications() {
+  const supabase = await createClient();
+  return supabase
+    .from("stands")
+    .select("*, exhibitors(id, company_name, logo_url), halls(name)")
+    .eq("status", "reserved")
+    .order("updated_at", { ascending: false });
+}
+
+export async function approveStand(id: string) {
+  const supabase = await createClient();
+  
+  // 1. Get the stand to find the exhibitor_id
+  const { data: stand } = await supabase
+    .from("stands")
+    .select("exhibitor_id")
+    .eq("id", id)
+    .single();
+
+  // 2. Update stand status
+  const result = await supabase
+    .from("stands")
+    .update({ status: "booked" as const } as never)
+    .eq("id", id)
+    .select()
+    .single();
+  
+  // 3. If exhibitor is linked, ensure they are also approved
+  if (!result.error && stand?.exhibitor_id) {
+    await supabase
+      .from("exhibitors")
+      .update({ status: "approved" as const } as never)
+      .eq("id", stand.exhibitor_id)
+      .eq("status", "pending") // Only if they were pending
+      .select();
+    
+    revalidatePath("/exhibitors");
+  }
+  
+  if (!result.error) {
+    revalidatePath("/stands");
+    revalidatePath(`/stands/${id}`);
+  }
+  return result;
+}
+
+export async function rejectStand(id: string) {
+  const supabase = await createClient();
+  const result = await supabase
+    .from("stands")
+    .update({ status: "available" as const, exhibitor_id: null } as never)
+    .eq("id", id)
+    .select()
+    .single();
+  
+  if (!result.error) {
+    revalidatePath("/stands");
+    revalidatePath(`/stands/${id}`);
+  }
   return result;
 }

@@ -50,33 +50,24 @@ export function InviteConfirmClient() {
       const tokenHash = searchParams.get("token_hash");
       const type = searchParams.get("type");
 
-      if (tokenHash && type === "invite") {
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: "invite",
-        });
-
-        if (error) {
-          setErrorMessage(error.message);
-          setPageState("error");
-        } else {
-          setPageState("set-password");
-        }
-        return;
-      }
-
-      // Check if session already exists (redirect from email link)
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session) {
-        setPageState("set-password");
-      } else {
+      if (!tokenHash || type !== "invite") {
         setErrorMessage(
           "Invalid or expired invitation link. Please request a new invitation.",
         );
         setPageState("error");
+        return;
+      }
+
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: "invite",
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        setPageState("error");
+      } else {
+        setPageState("set-password");
       }
     }
 

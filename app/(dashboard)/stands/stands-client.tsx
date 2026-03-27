@@ -202,6 +202,7 @@ export function StandsClient({ stands }: { stands: StandItem[] }) {
                 Hall <SortIcon column="hall_name" />
               </TableHead>
               <TableHead>Exhibitor</TableHead>
+              <TableHead>Features</TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => handleSort("status")}>
                 Status <SortIcon column="status" />
               </TableHead>
@@ -233,6 +234,16 @@ export function StandsClient({ stands }: { stands: StandItem[] }) {
                     <span className="text-footnote">
                       {stand.exhibitor_name ?? <span className="text-muted-foreground">Unassigned</span>}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {stand.features.map((feat, idx) => (
+                        <Badge key={idx} variant="outline" className="text-[10px] px-1.5 py-0 leading-tight bg-secondary/30 border-0 text-muted-foreground">
+                          {feat}
+                        </Badge>
+                      ))}
+                      {stand.features.length === 0 && <span className="text-muted-foreground/30 text-[10px]">-</span>}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge className={cn("text-caption-2", statusConfig.color)}>
@@ -269,7 +280,7 @@ export function StandsClient({ stands }: { stands: StandItem[] }) {
             })}
             {pageItems.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   No stands found.
                 </TableCell>
               </TableRow>

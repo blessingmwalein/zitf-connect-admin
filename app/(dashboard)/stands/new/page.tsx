@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Trash2, Puzzle, Check } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectTrigger,
@@ -30,7 +31,8 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getHalls } from "@/services/hall.service";
 import { bulkCreateStands } from "@/services/stand.service";
-import type { StandInsert } from "@/types/database.types";
+import { getActiveStandFeatures, bulkAssignFeaturesToStand } from "@/services/stand-feature.service";
+import type { StandInsert, StandFeature } from "@/types/database.types";
 
 interface HallOption {
   id: string;
@@ -55,13 +57,41 @@ export default function NewStandsPage() {
     { stand_number: "" },
   ]);
 
+  // Features
+  const [availableFeatures, setAvailableFeatures] = useState<StandFeature[]>([]);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+
   useEffect(() => {
     getHalls().then((res) => {
       if (res.data) {
         setHalls(res.data.map((h: any) => ({ id: h.id, name: h.name })));
       }
     });
+    getActiveStandFeatures().then((res) => {
+      if (res.data) {
+        setAvailableFeatures(res.data);
+      }
+    });
   }, []);
+
+  const toggleFeature = (id: string) => {
+    setSelectedFeatures(prev => 
+      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    );
+  };
+
+  async function assignFeaturesToCreatedStands(standIds: string[]) {
+    if (selectedFeatures.length === 0) return;
+    
+    const featureAssignments = selectedFeatures.map(fId => ({
+      feature_id: fId,
+      quantity: 1
+    }));
+
+    await Promise.all(
+      standIds.map(id => bulkAssignFeaturesToStand(id, featureAssignments))
+    );
+  }
 
   function generatePreview(): StandInsert[] {
     if (!hallId) return [];
@@ -87,6 +117,12 @@ export default function NewStandsPage() {
         toast.error("Failed to create stands", { description: result.error.message });
         return;
       }
+      
+      if (result.data && selectedFeatures.length > 0) {
+        const createdIds = (result.data as any[]).map(s => s.id);
+        await assignFeaturesToCreatedStands(createdIds);
+      }
+
       toast.success(`${stands.length} stands created successfully`);
       router.push("/stands");
     } catch {
@@ -120,6 +156,12 @@ export default function NewStandsPage() {
         toast.error("Failed to create stands", { description: result.error.message });
         return;
       }
+
+      if (result.data && selectedFeatures.length > 0) {
+        const createdIds = (result.data as any[]).map(s => s.id);
+        await assignFeaturesToCreatedStands(createdIds);
+      }
+
       toast.success(`${stands.length} stand(s) created`);
       router.push("/stands");
     } catch {
@@ -172,6 +214,62 @@ export default function NewStandsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Common Features */}
+      {availableFeatures.length > 0 && (
+        <Card className="ios-card">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Puzzle className="size-4 text-ios-blue" />
+              <CardTitle className="text-headline">Common Features (Optional)</CardTitle>
+            </div>
+            <p className="text-caption-1 text-muted-foreground mt-1">
+              Select features to be automatically assigned to all {prefix ? "generated" : "newly created"} stands.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {availableFeatures.map((feature) => {
+                const isSelected = selectedFeatures.includes(feature.id);
+                return (
+                  <button
+                    key={feature.id}
+                    type="button"
+                    onClick={() => toggleFeature(feature.id)}
+                    className={cn(
+                      "flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 text-left",
+                      isSelected 
+                        ? "bg-ios-blue/5 border-ios-blue/30 ring-1 ring-ios-blue/30 shadow-sm" 
+                        : "bg-secondary/30 border-transparent hover:bg-secondary/50"
+                    )}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-semibold leading-none truncate">{feature.name}</p>
+                      <p className="mt-1.5 text-caption-2 text-muted-foreground">
+                        ${feature.default_price.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className={cn(
+                      "size-5 rounded-full border flex items-center justify-center transition-colors",
+                      isSelected ? "bg-ios-blue border-ios-blue" : "border-muted-foreground/30 bg-background"
+                    )}>
+                      {isSelected && <Check className="size-3 text-white stroke-[3px]" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Re-import cn for the button styles */}
+      {(() => {
+        // This is a hack to make sure CN is available if not already imported
+        // But usually it's better to check imports. 
+        // Let's check imports.
+        return null;
+      })()}
 
       <Tabs defaultValue="bulk">
         <TabsList>

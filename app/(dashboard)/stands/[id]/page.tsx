@@ -10,9 +10,15 @@ import Link from "next/link";
 
 import { standSchema, type StandFormData } from "@/lib/validators/stand";
 import { updateStand as updateStandService, getStandById, assignExhibitorToStand, unassignStand } from "@/services/stand.service";
-import { getHalls } from "@/services/hall.service";
-import { getHallById } from "@/services/hall.service";
+import { getHalls, getHallById } from "@/services/hall.service";
 import { getExhibitorsList } from "@/services/exhibitor.service";
+import {
+  getActiveStandFeatures,
+  getFeaturesByStandId,
+  assignFeatureToStand,
+  removeFeatureFromStand,
+  updateFeatureAssignment,
+} from "@/services/stand-feature.service";
 import {
   STAND_STATUS_CONFIG,
   type StandStatus,
@@ -24,13 +30,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
+  Puzzle,
+  Plus,
+  Trash2,
+  Minus,
+  DollarSign,
+  PlusCircle,
+} from "lucide-react";
+import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-
+  CardTitle
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   Select,
   SelectTrigger,
@@ -79,6 +93,26 @@ export default function StandDetailPage() {
   const [exhibitors, setExhibitors] = useState<{ id: string; company_name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
+  const [assignedFeatures, setAssignedFeatures] = useState<any[]>([]);
+  const [availableFeatures, setAvailableFeatures] = useState<any[]>([]);
+  const [isFeaturesLoading, setIsFeaturesLoading] = useState(false);
+  const [featureToAdd, setFeatureToAdd] = useState<any | null>(null);
+
+  async function loadStandFeatures() {
+    setIsFeaturesLoading(true);
+    try {
+      const [assignedRes, availableRes] = await Promise.all([
+        getFeaturesByStandId(id),
+        getActiveStandFeatures(),
+      ]);
+      setAssignedFeatures(assignedRes.data || []);
+      setAvailableFeatures(availableRes.data || []);
+    } catch {
+      // Silently fail features
+    } finally {
+      setIsFeaturesLoading(false);
+    }
+  }
 
   async function loadData() {
     try {
@@ -120,6 +154,9 @@ export default function StandDetailPage() {
       if (exhRes.data) {
         setExhibitors(exhRes.data);
       }
+      
+      // Load features after core stand data
+      await loadStandFeatures();
     } catch {
       // Failed to load
     } finally {
@@ -168,6 +205,56 @@ export default function StandDetailPage() {
       toast.error("Something went wrong");
     } finally {
       setAssigning(false);
+    }
+  }
+
+  async function handleAddFeature(featureId: string) {
+    const feature = availableFeatures.find(f => f.id === featureId);
+    if (!feature) return;
+    setFeatureToAdd(feature);
+  }
+
+  async function confirmAddFeature() {
+    if (!featureToAdd) return;
+    try {
+      const { error } = await assignFeatureToStand({
+        stand_id: id,
+        feature_id: featureToAdd.id,
+        custom_price: featureToAdd.default_price,
+        quantity: 1
+      });
+      if (error) throw error;
+      toast.success(`${featureToAdd.name} added`);
+      await loadStandFeatures();
+    } catch (err: any) {
+      toast.error("Failed to add feature", { description: err.message });
+    } finally {
+      setFeatureToAdd(null);
+    }
+  }
+
+  async function handleRemoveFeature(assignmentId: string) {
+    try {
+      const { error } = await removeFeatureFromStand(assignmentId);
+      if (error) throw error;
+      toast.success("Feature removed");
+      await loadStandFeatures();
+    } catch (err: any) {
+      toast.error("Failed to remove feature", { description: err.message });
+    }
+  }
+
+  async function handleUpdateFeature(assignmentId: string, quantity: number, customPrice?: number) {
+    if (quantity < 1) return;
+    try {
+      const { error } = await updateFeatureAssignment(assignmentId, {
+        quantity,
+        ...(customPrice !== undefined ? { custom_price: customPrice } : {})
+      });
+      if (error) throw error;
+      await loadStandFeatures();
+    } catch (err: any) {
+      toast.error("Update failed", { description: err.message });
     }
   }
 
@@ -286,6 +373,7 @@ export default function StandDetailPage() {
                       onValueChange={(val) =>
                         setValue("hall_id", val as string, {
                           shouldValidate: true,
+                          shouldDirty: true,
                         })
                       }
                     >
@@ -317,6 +405,7 @@ export default function StandDetailPage() {
                       onValueChange={(val) =>
                         setValue("status", val as StandStatus, {
                           shouldValidate: true,
+                          shouldDirty: true,
                         })
                       }
                     >
@@ -393,6 +482,117 @@ export default function StandDetailPage() {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+
+          {/* Stand Features & Addons relocated from sidebar */}
+          <Card className="ios-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-headline flex items-center gap-2">
+                <Puzzle className="size-4 text-ios-blue" />
+                Features & Addons
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {assignedFeatures.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {assignedFeatures.map((af) => (
+                    <div key={af.id} className="group relative flex flex-col gap-2 rounded-2xl bg-secondary/30 p-3 transition-colors hover:bg-secondary/50">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-[15px] font-semibold leading-none">{af.stand_features.name}</p>
+                          <p className="mt-1 text-caption-1 text-muted-foreground">
+                            ${(af.custom_price || af.stand_features.default_price).toLocaleString()} / unit
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-full text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                          onClick={() => handleRemoveFeature(af.id)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center justify-between h-8">
+                        <div className="flex items-center gap-2 bg-background/50 rounded-lg p-0.5 border">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 rounded-md hover:bg-background"
+                            onClick={() => handleUpdateFeature(af.id, af.quantity - 1)}
+                            disabled={af.quantity <= 1}
+                          >
+                            <Minus className="size-3" />
+                          </Button>
+                          <span className="min-w-6 text-center text-footnote font-bold">
+                            {af.quantity}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 rounded-md hover:bg-background"
+                            onClick={() => handleUpdateFeature(af.id, af.quantity + 1)}
+                          >
+                            <Plus className="size-3" />
+                          </Button>
+                        </div>
+                        <p className="text-footnote font-bold">
+                          ${((af.custom_price || af.stand_features.default_price) * af.quantity).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-6 text-center">
+                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-muted/50">
+                    <Puzzle className="size-5 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-footnote text-muted-foreground">No features or addons assigned to this stand yet.</p>
+                </div>
+              )}
+
+              {assignedFeatures.length > 0 && (
+                <div className="flex justify-between items-center py-2 px-4 bg-ios-blue/5 rounded-2xl border border-ios-blue/10">
+                  <span className="text-footnote font-bold text-muted-foreground uppercase tracking-wider">TOTAL ADDONS COST</span>
+                  <span className="text-title-3 font-bold text-ios-blue">
+                    ${assignedFeatures.reduce((acc, f) => acc + ((f.custom_price || f.stand_features.default_price) * f.quantity), 0).toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              <div className="pt-2 max-w-md">
+                <Select
+                  value=""
+                  onValueChange={(val) => val && handleAddFeature(val)}
+                  disabled={isFeaturesLoading}
+                >
+                  <SelectTrigger className="w-full bg-ios-blue/10 border-0 text-ios-blue hover:bg-ios-blue/20 transition-colors h-11 rounded-xl px-4">
+                    <SelectValue placeholder={isFeaturesLoading ? "Loading features..." : "Add Feature or Addon"} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl shadow-ios border-0">
+                    {availableFeatures
+                      .filter(f => !assignedFeatures.some(af => af.feature_id === f.id))
+                      .map((f) => (
+                        <SelectItem key={f.id} value={f.id} className="rounded-lg py-2">
+                          <div className="flex flex-col">
+                            <span className="font-semibold">{f.name}</span>
+                            <span className="text-caption-2 text-muted-foreground">
+                              Default Price: ${f.default_price.toLocaleString()}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    {availableFeatures.length === 0 && (
+                      <div className="p-4 text-center text-footnote text-muted-foreground">
+                        No active features found
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -473,6 +673,16 @@ export default function StandDetailPage() {
           />
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!featureToAdd}
+        onOpenChange={(open) => !open && setFeatureToAdd(null)}
+        title="Add Feature"
+        description={`Are you sure you want to add "${featureToAdd?.name}" to this stand? This will add the default price of $${featureToAdd?.default_price?.toLocaleString()} to the total cost.`}
+        confirmLabel="Add Addon"
+        onConfirm={confirmAddFeature}
+        variant="default"
+      />
     </div>
   );
 }

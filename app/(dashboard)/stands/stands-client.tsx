@@ -217,7 +217,7 @@ export function StandsClient({ stands }: { stands: StandItem[] }) {
           </TableHeader>
           <TableBody>
             {pageItems.map((stand) => {
-              const statusConfig = STAND_STATUS_CONFIG[stand.status];
+              const statusConfig = STAND_STATUS_CONFIG[stand.status as StandStatus] ?? { label: stand.status, color: "bg-muted text-muted-foreground" };
               return (
                 <TableRow key={stand.id}>
                   <TableCell>
@@ -256,7 +256,7 @@ export function StandsClient({ stands }: { stands: StandItem[] }) {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger>
+                      <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="size-8">
                           <MoreHorizontal className="size-4" />
                         </Button>

@@ -78,7 +78,7 @@ export function ApplicationsPopover() {
 
   return (
     <Popover>
-      <PopoverTrigger>
+      <PopoverTrigger asChild>
         <Button variant="outline" size="icon" className="relative h-11 w-11 rounded-2xl bg-background border-0 shadow-ios transition-all active:scale-95 group">
           <Bell className="size-5 text-muted-foreground group-hover:text-ios-blue transition-colors" />
           {applications.length > 0 && (

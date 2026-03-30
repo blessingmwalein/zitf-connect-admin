@@ -9,6 +9,8 @@ import {
   UserCheck,
   Map,
   Puzzle,
+  Ticket,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -71,6 +73,18 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/venue-map",
     icon: Map,
     description: "Interactive venue map",
+  },
+  {
+    title: "Tickets",
+    href: "/tickets",
+    icon: Ticket,
+    description: "Manage ticket types & pricing",
+  },
+  {
+    title: "Billing",
+    href: "/billing",
+    icon: CreditCard,
+    description: "Orders & payment logs",
   },
   {
     title: "Analytics",
@@ -168,4 +182,46 @@ export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
   nfc_tap: "NFC Tap",
   manual: "Manual",
   app_checkin: "App Check-in",
+};
+
+/* ============================================
+   Billing / Payment Configs
+   ============================================ */
+
+export type OrderStatus = "pending" | "paid" | "failed" | "refunded" | "cancelled";
+
+export const ORDER_STATUS_CONFIG: Record<
+  OrderStatus,
+  { label: string; color: string }
+> = {
+  pending: { label: "Pending", color: "bg-ios-orange/15 text-ios-orange" },
+  paid: { label: "Paid", color: "bg-ios-green/15 text-ios-green" },
+  failed: { label: "Failed", color: "bg-ios-red/15 text-ios-red" },
+  refunded: { label: "Refunded", color: "bg-ios-blue/15 text-ios-blue" },
+  cancelled: { label: "Cancelled", color: "bg-muted text-muted-foreground" },
+};
+
+export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled";
+
+export const PAYMENT_STATUS_CONFIG: Record<
+  PaymentStatus,
+  { label: string; color: string }
+> = {
+  pending: { label: "Pending", color: "bg-ios-orange/15 text-ios-orange" },
+  paid: { label: "Paid", color: "bg-ios-green/15 text-ios-green" },
+  failed: { label: "Failed", color: "bg-ios-red/15 text-ios-red" },
+  cancelled: { label: "Cancelled", color: "bg-muted text-muted-foreground" },
+};
+
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  web: "Web (Paynow)",
+  ecocash: "EcoCash",
+  onemoney: "OneMoney",
+};
+
+export type TicketCategory = "visitor" | "exhibitor";
+
+export const TICKET_CATEGORY_LABELS: Record<TicketCategory, string> = {
+  visitor: "Visitor",
+  exhibitor: "Exhibitor",
 };

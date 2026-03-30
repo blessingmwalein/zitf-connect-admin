@@ -307,11 +307,13 @@ export default function FeaturesPage() {
                   </TableCell>
                   <TableCell className="pr-6 py-4">
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button variant="ghost" size="icon" className="size-8">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        }
+                      />
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleOpenDialog(feature)} className="gap-2 cursor-pointer font-medium p-2.5">
                           <Pencil className="size-4" /> Edit

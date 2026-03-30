@@ -427,6 +427,187 @@ export type Database = {
         };
       };
     };
+      ticket_types: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          price: number;
+          currency: string;
+          max_quantity: number | null;
+          sold_count: number;
+          ticket_category: "visitor" | "exhibitor";
+          valid_from: string | null;
+          valid_until: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          price: number;
+          currency?: string;
+          max_quantity?: number | null;
+          sold_count?: number;
+          ticket_category: "visitor" | "exhibitor";
+          valid_from?: string | null;
+          valid_until?: string | null;
+          is_active?: boolean;
+        };
+        Update: {
+          name?: string;
+          description?: string | null;
+          price?: number;
+          currency?: string;
+          max_quantity?: number | null;
+          sold_count?: number;
+          ticket_category?: "visitor" | "exhibitor";
+          valid_from?: string | null;
+          valid_until?: string | null;
+          is_active?: boolean;
+        };
+      };
+      orders: {
+        Row: {
+          id: string;
+          order_number: string;
+          user_id: string | null;
+          user_email: string;
+          user_type: string;
+          total_amount: number;
+          currency: string;
+          status: "pending" | "paid" | "failed" | "refunded" | "cancelled";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_number: string;
+          user_id?: string | null;
+          user_email: string;
+          user_type?: string;
+          total_amount: number;
+          currency?: string;
+          status?: "pending" | "paid" | "failed" | "refunded" | "cancelled";
+        };
+        Update: {
+          order_number?: string;
+          user_email?: string;
+          user_type?: string;
+          total_amount?: number;
+          currency?: string;
+          status?: "pending" | "paid" | "failed" | "refunded" | "cancelled";
+        };
+      };
+      order_items: {
+        Row: {
+          id: string;
+          order_id: string;
+          ticket_type_id: string;
+          quantity: number;
+          unit_price: number;
+          subtotal: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          ticket_type_id: string;
+          quantity: number;
+          unit_price: number;
+          subtotal: number;
+        };
+        Update: {
+          quantity?: number;
+          unit_price?: number;
+          subtotal?: number;
+        };
+      };
+      payments: {
+        Row: {
+          id: string;
+          order_id: string | null;
+          paynow_reference: string | null;
+          poll_url: string | null;
+          redirect_url: string | null;
+          amount: number;
+          currency: string;
+          payment_method: string;
+          status: "pending" | "paid" | "failed" | "cancelled";
+          payment_type: string;
+          phone_number: string | null;
+          instructions: string | null;
+          metadata: Json | null;
+          paid_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id?: string | null;
+          paynow_reference?: string | null;
+          poll_url?: string | null;
+          redirect_url?: string | null;
+          amount: number;
+          currency?: string;
+          payment_method: string;
+          status?: "pending" | "paid" | "failed" | "cancelled";
+          payment_type?: string;
+          phone_number?: string | null;
+          instructions?: string | null;
+          metadata?: Json | null;
+        };
+        Update: {
+          paynow_reference?: string | null;
+          poll_url?: string | null;
+          amount?: number;
+          currency?: string;
+          payment_method?: string;
+          status?: "pending" | "paid" | "failed" | "cancelled";
+          paid_at?: string | null;
+        };
+      };
+      tickets: {
+        Row: {
+          id: string;
+          order_id: string;
+          order_item_id: string | null;
+          ticket_type_id: string;
+          holder_name: string | null;
+          holder_email: string | null;
+          holder_type: string;
+          qr_code_data: string | null;
+          qr_code_url: string | null;
+          is_used: boolean;
+          used_at: string | null;
+          downloaded: boolean;
+          download_count: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          order_item_id?: string | null;
+          ticket_type_id: string;
+          holder_name?: string | null;
+          holder_email?: string | null;
+          holder_type?: string;
+          qr_code_data?: string | null;
+          qr_code_url?: string | null;
+          is_used?: boolean;
+          downloaded?: boolean;
+          download_count?: number;
+        };
+        Update: {
+          is_used?: boolean;
+          used_at?: string | null;
+          downloaded?: boolean;
+          download_count?: number;
+        };
+      };
+    };
     Enums: {
       admin_role: AdminRole;
       stand_status: StandStatus;
@@ -472,3 +653,12 @@ export type StandFeatureAssignmentUpdate = Database["public"]["Tables"]["stand_f
 export type LeadsPerExhibitor = Database["public"]["Views"]["v_leads_per_exhibitor"]["Row"];
 export type EventParticipation = Database["public"]["Views"]["v_event_participation"]["Row"];
 export type DailyEngagement = Database["public"]["Views"]["v_daily_engagement"]["Row"];
+
+export type TicketType = Database["public"]["Tables"]["ticket_types"]["Row"];
+export type TicketTypeInsert = Database["public"]["Tables"]["ticket_types"]["Insert"];
+export type TicketTypeUpdate = Database["public"]["Tables"]["ticket_types"]["Update"];
+export type Order = Database["public"]["Tables"]["orders"]["Row"];
+export type OrderInsert = Database["public"]["Tables"]["orders"]["Insert"];
+export type OrderItem = Database["public"]["Tables"]["order_items"]["Row"];
+export type Payment = Database["public"]["Tables"]["payments"]["Row"];
+export type IssuedTicket = Database["public"]["Tables"]["tickets"]["Row"];

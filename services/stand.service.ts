@@ -179,11 +179,12 @@ export async function approveStand(id: string) {
     .single();
   
   // 3. If exhibitor is linked, ensure they are also approved
-  if (!result.error && stand?.exhibitor_id) {
+  const exhibitorId = (stand as any)?.exhibitor_id;
+  if (!result.error && exhibitorId) {
     await supabase
       .from("exhibitors")
       .update({ status: "approved" as const } as never)
-      .eq("id", stand.exhibitor_id)
+      .eq("id", exhibitorId)
       .eq("status", "pending") // Only if they were pending
       .select();
     

@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Search, X } from "lucide-react";
+import { Search, X, Flame, Users, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapSkeleton } from "@/components/maps/map-skeleton";
 import { FullscreenMapWrapper } from "@/components/maps/fullscreen-map-wrapper";
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
 
 const VenueMapInner = dynamic(
   () => import("./venue-map-inner").then((m) => m.VenueMapInner),
@@ -36,9 +39,21 @@ interface VenueMapClientProps {
   stands: Stand[];
 }
 
+interface HeatmapPoint {
+  lat: number;
+  lng: number;
+  intensity: number;
+}
+
 export function VenueMapClient({ halls, stands }: VenueMapClientProps) {
   const [search, setSearch] = useState("");
   const [selectedExhibitor, setSelectedExhibitor] = useState<Stand | null>(null);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [showPeople, setShowPeople] = useState(true);
+  const [heatmapRadius, setHeatmapRadius] = useState(25);
+  const [heatmapPoints, setHeatmapPoints] = useState<HeatmapPoint[]>([]);
+  const [isPolling, setIsPolling] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
   const exhibitorStands = useMemo(() => {
     return stands.filter((s) => s.exhibitor_name);
@@ -60,6 +75,47 @@ export function VenueMapClient({ halls, stands }: VenueMapClientProps) {
   function clearSelection() {
     setSelectedExhibitor(null);
   }
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function pollHeatmap() {
+      if (!mounted) return;
+      setIsPolling(true);
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/tracking/heatmap/live`, {
+          method: "GET",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (!mounted) return;
+
+        setHeatmapPoints(Array.isArray(data?.points) ? data.points : []);
+        setLastUpdate(new Date().toISOString());
+      } catch {
+        // Keep existing points if polling fails temporarily.
+      } finally {
+        if (mounted) setIsPolling(false);
+      }
+    }
+
+    pollHeatmap();
+    const intervalId = window.setInterval(pollHeatmap, 10000);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  const lastUpdateLabel = useMemo(() => {
+    if (!lastUpdate) return "Never";
+    return new Date(lastUpdate).toLocaleTimeString();
+  }, [lastUpdate]);
 
   return (
     <div className="space-y-3">
@@ -113,12 +169,64 @@ export function VenueMapClient({ halls, stands }: VenueMapClientProps) {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/50 bg-card p-3 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setShowHeatmap((v) => !v)}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-caption-1 font-medium transition-all ${
+            showHeatmap
+              ? "bg-ios-orange/10 text-ios-orange"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Flame className="h-3.5 w-3.5" />
+          Heatmap
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowPeople((v) => !v)}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-caption-1 font-medium transition-all ${
+            showPeople
+              ? "bg-ios-green/10 text-ios-green"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Users className="h-3.5 w-3.5" />
+          People
+        </button>
+
+        <div className="flex items-center gap-2">
+          <span className="text-caption-2 text-muted-foreground">Radius</span>
+          <input
+            type="range"
+            min={10}
+            max={50}
+            value={heatmapRadius}
+            onChange={(e) => setHeatmapRadius(parseInt(e.target.value, 10))}
+            className="w-20 accent-primary"
+          />
+          <span className="w-6 text-caption-2 text-muted-foreground">{heatmapRadius}</span>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2 text-caption-2 text-muted-foreground">
+          <RefreshCw className={`h-3.5 w-3.5 ${isPolling ? "animate-spin" : ""}`} />
+          {heatmapPoints.length} points
+          <span className="text-border">•</span>
+          Updated {lastUpdateLabel}
+        </div>
+      </div>
+
       {/* Map */}
       <FullscreenMapWrapper className="h-[70vh] rounded-xl overflow-hidden">
         <VenueMapInner
           halls={halls}
           stands={stands}
           selectedStand={selectedExhibitor}
+          heatmapPoints={heatmapPoints}
+          showHeatmap={showHeatmap}
+          showPeopleMarkers={showPeople}
+          heatmapRadius={heatmapRadius}
         />
       </FullscreenMapWrapper>
     </div>

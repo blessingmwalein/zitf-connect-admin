@@ -418,3 +418,10 @@
   font-size: 0.8125rem;
   line-height: 1.125rem;
 }
+
+/* Person marker icons on heatmap — strip Leaflet defaults */
+.person-marker {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}

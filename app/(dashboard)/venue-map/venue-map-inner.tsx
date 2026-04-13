@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Polygon, Popup, Marker, Polyline, CircleMarker, useMap } from "react-leaflet";
 import Link from "next/link";
 import L from "leaflet";
 import { ZITF_CENTER, ZITF_DEFAULT_ZOOM } from "@/components/maps/map-container-inner";
 import "@/components/maps/leaflet-icons";
+import { HeatmapLayer } from "@/components/maps/heatmap-layer";
+import { PeopleMarkersLayer } from "@/components/maps/people-markers-layer";
 
 const HALL_COLORS = [
   "#F69825", "#34C759", "#007AFF", "#AF52DE",
@@ -34,6 +36,16 @@ interface Props {
   halls: Hall[];
   stands: Stand[];
   selectedStand: Stand | null;
+  heatmapPoints?: HeatmapPoint[];
+  showHeatmap?: boolean;
+  showPeopleMarkers?: boolean;
+  heatmapRadius?: number;
+}
+
+interface HeatmapPoint {
+  lat: number;
+  lng: number;
+  intensity: number;
 }
 
 function FlyToStand({ stand }: { stand: Stand | null }) {
@@ -121,7 +133,15 @@ function RouteLine({ from, to }: { from: [number, number] | null; to: [number, n
   );
 }
 
-export function VenueMapInner({ halls, stands, selectedStand }: Props) {
+export function VenueMapInner({
+  halls,
+  stands,
+  selectedStand,
+  heatmapPoints = [],
+  showHeatmap = true,
+  showPeopleMarkers = true,
+  heatmapRadius = 25,
+}: Props) {
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
 
   useEffect(() => {
@@ -152,6 +172,27 @@ export function VenueMapInner({ halls, stands, selectedStand }: Props) {
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      {showHeatmap && (
+        <HeatmapLayer
+          points={heatmapPoints}
+          radius={heatmapRadius}
+          blur={15}
+          minOpacity={0.35}
+          gradient={{
+            0.0: "#3B82F6",
+            0.35: "#22C55E",
+            0.7: "#EAB308",
+            1.0: "#EF4444",
+          }}
+        />
+      )}
+
+      <PeopleMarkersLayer
+        points={heatmapPoints}
+        showHeads={showPeopleMarkers}
+        maxMarkers={300}
       />
 
       {/* Fly to selected stand */}

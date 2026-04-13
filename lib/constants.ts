@@ -11,6 +11,7 @@ import {
   Puzzle,
   Ticket,
   CreditCard,
+  Flame,
   type LucideIcon,
 } from "lucide-react";
 
@@ -85,6 +86,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/billing",
     icon: CreditCard,
     description: "Orders & payment logs",
+  },
+  {
+    title: "Heatmap",
+    href: "/heatmap",
+    icon: Flame,
+    description: "Real-time proximity heatmap",
   },
   {
     title: "Analytics",

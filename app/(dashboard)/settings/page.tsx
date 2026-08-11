@@ -1,6 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { APP_CONFIG } from "@/lib/app-config";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,7 +87,7 @@ export default function SettingsPage() {
         <dl className="space-y-3 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Application</dt>
-            <dd className="text-foreground">ZITF Admin Dashboard</dd>
+            <dd className="text-foreground">{APP_CONFIG.adminName}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Version</dt>

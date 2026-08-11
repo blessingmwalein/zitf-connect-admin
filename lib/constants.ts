@@ -3,6 +3,8 @@ import {
   Building2,
   MapPin,
   Calendar,
+  CalendarRange,
+  Landmark,
   BarChart3,
   Settings,
   Users,
@@ -24,96 +26,139 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   description?: string;
+  /** "global" = platform-wide page, not tied to one event.
+   *  "event" = scoped to whichever fair/show is currently active. */
+  section: "global" | "event";
 }
 
 export const NAV_ITEMS: NavItem[] = [
+  /* ---- GLOBAL (platform-wide, not tied to one event) ---- */
   {
     title: "Overview",
     href: "/overview",
     icon: LayoutDashboard,
     description: "Dashboard overview",
-  },
-  {
-    title: "Exhibitors",
-    href: "/exhibitors",
-    icon: Users,
-    description: "Manage exhibitors",
-  },
-  {
-    title: "Visitors",
-    href: "/visitors",
-    icon: UserCheck,
-    description: "Manage visitors",
-  },
-  {
-    title: "Halls",
-    href: "/halls",
-    icon: Building2,
-    description: "Manage halls",
-  },
-  {
-    title: "Stands",
-    href: "/stands",
-    icon: MapPin,
-    description: "Manage stands",
-  },
-  {
-    title: "Stand Features",
-    href: "/stands/features",
-    icon: Puzzle,
-    description: "Manage stand addons & features",
+    section: "global",
   },
   {
     title: "Events",
     href: "/events",
-    icon: Calendar,
-    description: "Schedule events",
+    icon: CalendarRange,
+    description: "Manage fair/show editions",
+    section: "global",
   },
   {
-    title: "Venue Map",
-    href: "/venue-map",
-    icon: Map,
-    description: "Interactive venue map",
-  },
-  {
-    title: "Tickets",
-    href: "/tickets",
-    icon: Ticket,
-    description: "Manage ticket types & pricing",
-  },
-  {
-    title: "Billing",
-    href: "/billing",
-    icon: CreditCard,
-    description: "Orders & payment logs",
-  },
-  {
-    title: "Heatmap",
-    href: "/heatmap",
-    icon: Flame,
-    description: "Real-time proximity heatmap",
-  },
-  {
-    title: "Analytics",
-    href: "/analytics",
-    icon: BarChart3,
-    description: "Reports & analytics",
+    title: "Venues",
+    href: "/venues",
+    icon: Landmark,
+    description: "Manage venue locations",
+    section: "global",
   },
   {
     title: "Settings",
     href: "/settings",
     icon: Settings,
     description: "Admin settings",
+    section: "global",
+  },
+
+  /* ---- EVENT (scoped to the currently active fair/show) ---- */
+  {
+    title: "Exhibitors",
+    href: "/exhibitors",
+    icon: Users,
+    description: "Manage exhibitors",
+    section: "event",
+  },
+  {
+    title: "Visitors",
+    href: "/visitors",
+    icon: UserCheck,
+    description: "Manage visitors",
+    section: "event",
+  },
+  {
+    title: "Halls",
+    href: "/halls",
+    icon: Building2,
+    description: "Manage halls",
+    section: "event",
+  },
+  {
+    title: "Stands",
+    href: "/stands",
+    icon: MapPin,
+    description: "Manage stands",
+    section: "event",
+  },
+  {
+    title: "Stand Features",
+    href: "/stands/features",
+    icon: Puzzle,
+    description: "Manage stand addons & features",
+    section: "event",
+  },
+  {
+    title: "Programme",
+    href: "/programme",
+    icon: Calendar,
+    description: "Schedule events",
+    section: "event",
+  },
+  {
+    title: "Venue Map",
+    href: "/venue-map",
+    icon: Map,
+    description: "Interactive venue map",
+    section: "event",
+  },
+  {
+    title: "Tickets",
+    href: "/tickets",
+    icon: Ticket,
+    description: "Manage ticket types & pricing",
+    section: "event",
+  },
+  {
+    title: "Billing",
+    href: "/billing",
+    icon: CreditCard,
+    description: "Orders & payment logs",
+    section: "event",
+  },
+  {
+    title: "Heatmap",
+    href: "/heatmap",
+    icon: Flame,
+    description: "Real-time proximity heatmap",
+    section: "event",
+  },
+  {
+    title: "Analytics",
+    href: "/analytics",
+    icon: BarChart3,
+    description: "Reports & analytics",
+    section: "event",
   },
 ];
 
-/* Tab bar items (mobile) - limited to 5 */
+/* Tab bar items (mobile) - limited to 5.
+   Resolved by href/title match (not positional index) so reordering
+   NAV_ITEMS above can never silently break the mobile tab bar. */
+function requireNavItem(href: string): NavItem {
+  const item = NAV_ITEMS.find((navItem) => navItem.href === href);
+  if (!item) {
+    throw new Error(`TAB_BAR_ITEMS: no NAV_ITEMS entry with href "${href}"`);
+  }
+  return item;
+}
+
 export const TAB_BAR_ITEMS: NavItem[] = [
-  NAV_ITEMS[0], // Overview
-  NAV_ITEMS[1], // Exhibitors
-  NAV_ITEMS[6], // Events
-  NAV_ITEMS[3], // Halls
-  NAV_ITEMS[8], // Analytics
+  requireNavItem("/overview"), // Overview
+  requireNavItem("/exhibitors"), // Exhibitors
+  requireNavItem("/programme"), // Programme
+  requireNavItem("/halls"), // Halls
+  requireNavItem("/analytics"), // Analytics
 ];
 
 /* ============================================
@@ -170,10 +215,10 @@ export const STAND_STATUS_CONFIG: Record<
   unavailable: { label: "Unavailable", color: "bg-muted text-muted-foreground" },
 };
 
-export type EventStatus = "draft" | "published" | "cancelled" | "completed";
+export type AgendaSessionStatus = "draft" | "published" | "cancelled" | "completed";
 
-export const EVENT_STATUS_CONFIG: Record<
-  EventStatus,
+export const AGENDA_SESSION_STATUS_CONFIG: Record<
+  AgendaSessionStatus,
   { label: string; color: string }
 > = {
   draft: { label: "Draft", color: "bg-muted text-muted-foreground" },

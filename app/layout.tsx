@@ -5,10 +5,12 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
+// Branding is centralised in lib/app-config.ts — change there to rebrand.
+import { APP_CONFIG } from "@/lib/app-config";
+
 export const metadata: Metadata = {
-  title: "ZITF Connect Admin",
-  description:
-    "Administration portal for the Zimbabwe International Trade Fair",
+  title: `${APP_CONFIG.platformName} Admin`,
+  description: `Administration portal for the ${APP_CONFIG.eventFullName}`,
 };
 
 export const viewport: Viewport = {

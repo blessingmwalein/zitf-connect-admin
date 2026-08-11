@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 import { eventSchema, type EventFormData } from "@/lib/validators/event";
-import { updateEvent as updateEventService } from "@/services/event.service";
-import { getHalls } from "@/services/hall.service";
-import { EVENT_STATUS_CONFIG, type EventStatus } from "@/lib/constants";
+import { updateEvent, deleteEvent } from "@/services/event.service";
+import { getVenues } from "@/services/venue.service";
+import { uploadEventLogo, uploadEventCoverImage } from "@/services/upload.service";
+import type { Event, EventLifecycleStatus } from "@/types/database.types";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,59 +20,59 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DateTimePicker } from "@/components/shared/date-time-picker";
+import { FileUpload } from "@/components/shared/file-upload";
 
-const STATUS_OPTIONS: EventStatus[] = [
-  "draft",
-  "published",
-  "cancelled",
-  "completed",
+const STATUS_OPTIONS: { value: EventLifecycleStatus; label: string }[] = [
+  { value: "draft", label: "Draft" },
+  { value: "published", label: "Published" },
+  { value: "active", label: "Active" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "archived", label: "Archived" },
 ];
 
-interface EventData {
-  id: string;
-  name: string;
-  description: string;
-  hall_id: string;
-  hall_name: string;
-  start_time: string;
-  end_time: string;
-  status: EventStatus;
-  speaker: string;
-  capacity: number;
+/** Converts an ISO date/datetime string to the date input format */
+function toDateInputValue(value: string): string {
+  if (!value) return "";
+  return value.slice(0, 10);
 }
 
-async function updateEvent(id: string, data: EventFormData) {
-  const { error } = await updateEventService(id, data as any);
-  if (error) throw error;
-  return { success: true };
-}
-
-/** Converts an ISO datetime string to the datetime-local input format */
-function toDatetimeLocal(iso: string): string {
-  if (!iso) return "";
-  // datetime-local expects "YYYY-MM-DDTHH:mm"
-  return iso.slice(0, 16);
-}
-
-export function EventEditForm({ event }: { event: EventData | null }) {
+export function EventEditForm({ event }: { event: Event | null }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [halls, setHalls] = useState<{ id: string; name: string }[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [venues, setVenues] = useState<{ id: string; name: string }[]>([]);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(
+    event?.logo_url ?? null
+  );
+  const [coverPreview, setCoverPreview] = useState<string | null>(
+    event?.cover_image_url ?? null
+  );
 
   useEffect(() => {
-    async function loadHalls() {
+    async function loadVenues() {
       try {
-        const { data } = await getHalls() as any;
+        const { data } = await getVenues();
         if (data) {
-          setHalls(data.map((h: any) => ({ id: h.id, name: h.name })));
+          setVenues(data.map((v: any) => ({ id: v.id, name: v.name })));
         }
       } catch {
-        // Failed to load halls
+        // Failed to load venues
       }
     }
-    loadHalls();
+    loadVenues();
   }, []);
 
   const {
@@ -85,40 +86,124 @@ export function EventEditForm({ event }: { event: EventData | null }) {
     defaultValues: event
       ? {
           name: event.name,
-          description: event.description,
-          hall_id: event.hall_id,
-          start_time: toDatetimeLocal(event.start_time),
-          end_time: toDatetimeLocal(event.end_time),
+          slug: event.slug,
+          description: event.description ?? "",
+          venue_id: event.venue_id ?? "",
+          start_date: toDateInputValue(event.start_date),
+          end_date: toDateInputValue(event.end_date),
           status: event.status,
-          speaker: event.speaker,
-          capacity: event.capacity,
+          country: event.country ?? "",
+          city: event.city ?? "",
+          address: event.address ?? "",
+          latitude: event.latitude ?? undefined,
+          longitude: event.longitude ?? undefined,
+          cover_image_url: event.cover_image_url ?? "",
+          logo_url: event.logo_url ?? "",
+          order_prefix: event.order_prefix ?? "EVT",
         }
       : {
           name: "",
+          slug: "",
           description: "",
-          hall_id: "",
-          start_time: "",
-          end_time: "",
+          venue_id: "",
+          start_date: "",
+          end_date: "",
           status: "draft",
-          speaker: "",
-          capacity: undefined,
+          country: "",
+          city: "",
+          address: "",
+          latitude: undefined,
+          longitude: undefined,
+          cover_image_url: "",
+          logo_url: "",
+          order_prefix: "EVT",
         },
   });
 
   const currentStatus = watch("status");
-  const currentHallId = watch("hall_id");
+  const currentVenueId = watch("venue_id");
+
+  async function handleLogoUpload(file: File) {
+    setIsUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { url, error } = await uploadEventLogo(formData);
+      if (error || !url) {
+        toast.error("Failed to upload logo", { description: error ?? undefined });
+        return;
+      }
+      setValue("logo_url", url, { shouldValidate: true });
+      setLogoPreview(url);
+      toast.success("Logo uploaded");
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  }
+
+  function handleLogoRemove() {
+    setValue("logo_url", "", { shouldValidate: true });
+    setLogoPreview(null);
+  }
+
+  async function handleCoverUpload(file: File) {
+    setIsUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { url, error } = await uploadEventCoverImage(formData);
+      if (error || !url) {
+        toast.error("Failed to upload cover image", { description: error ?? undefined });
+        return;
+      }
+      setValue("cover_image_url", url, { shouldValidate: true });
+      setCoverPreview(url);
+      toast.success("Cover image uploaded");
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setIsUploadingCover(false);
+    }
+  }
+
+  function handleCoverRemove() {
+    setValue("cover_image_url", "", { shouldValidate: true });
+    setCoverPreview(null);
+  }
 
   async function onSubmit(data: EventFormData) {
     if (!event) return;
     setIsSubmitting(true);
     try {
-      await updateEvent(event.id, data);
+      const { error } = await updateEvent(event.id, data as any);
+      if (error) throw error;
       toast.success("Event updated successfully");
       router.push("/events");
     } catch {
       toast.error("Failed to update event");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!event) return;
+    setIsDeleting(true);
+    try {
+      const result = await deleteEvent(event.id);
+      if (result.error) {
+        toast.error("Failed to delete event", { description: result.error.message });
+        return;
+      }
+      toast.success("Event deleted");
+      router.push("/events");
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setIsDeleting(false);
+      setDeleteOpen(false);
     }
   }
 
@@ -142,10 +227,16 @@ export function EventEditForm({ event }: { event: EventData | null }) {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Edit Event"
-        description={`Editing "${event.name}"`}
-      >
+      <PageHeader title="Edit Event" description={`Editing "${event.name}"`}>
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={() => setDeleteOpen(true)}
+          disabled={isDeleting}
+        >
+          <Trash2 className="size-4" />
+          Delete
+        </Button>
         <Link href="/events">
           <Button variant="outline">
             <ArrowLeft className="size-4" />
@@ -165,14 +256,26 @@ export function EventEditForm({ event }: { event: EventData | null }) {
               <Label htmlFor="name">Event Name</Label>
               <Input
                 id="name"
-                placeholder="e.g. Opening Ceremony"
+                placeholder="e.g. Zimbabwe Agricultural Show 2026"
                 {...register("name")}
                 aria-invalid={!!errors.name}
               />
               {errors.name && (
-                <p className="text-caption-1 text-ios-red">
-                  {errors.name.message}
-                </p>
+                <p className="text-caption-1 text-ios-red">{errors.name.message}</p>
+              )}
+            </div>
+
+            {/* Slug */}
+            <div className="space-y-2">
+              <Label htmlFor="slug">Slug</Label>
+              <Input
+                id="slug"
+                placeholder="e.g. zim-agri-show-2026"
+                {...register("slug")}
+                aria-invalid={!!errors.slug}
+              />
+              {errors.slug && (
+                <p className="text-caption-1 text-ios-red">{errors.slug.message}</p>
               )}
             </div>
 
@@ -181,7 +284,7 @@ export function EventEditForm({ event }: { event: EventData | null }) {
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                placeholder="Describe the event, its purpose, and agenda..."
+                placeholder="Describe this event edition..."
                 {...register("description")}
               />
               {errors.description && (
@@ -191,128 +294,210 @@ export function EventEditForm({ event }: { event: EventData | null }) {
               )}
             </div>
 
+            <Separator />
+
             <div className="grid gap-4 sm:grid-cols-2">
-              {/* Hall */}
+              {/* Start Date */}
               <div className="space-y-2">
-                <Label htmlFor="hall_id">Hall</Label>
-                <Select
-                  value={currentHallId ?? ""}
-                  onValueChange={(val) =>
-                    setValue("hall_id", val as string, {
-                      shouldValidate: true,
-                    })
+                <Label htmlFor="start_date">Start Date</Label>
+                <DateTimePicker
+                  id="start_date"
+                  includeTime={false}
+                  value={watch("start_date")}
+                  onChange={(val) =>
+                    setValue("start_date", val, { shouldValidate: true })
                   }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a hall" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {halls.map((h) => (
-                      <SelectItem key={h.id} value={h.id}>
-                        {h.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.hall_id && (
+                  placeholder="Pick start date"
+                />
+                {errors.start_date && (
                   <p className="text-caption-1 text-ios-red">
-                    {errors.hall_id.message}
+                    {errors.start_date.message}
                   </p>
                 )}
               </div>
 
-              {/* Status */}
+              {/* End Date */}
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={currentStatus ?? "draft"}
-                  onValueChange={(val) =>
-                    setValue("status", val as EventStatus, {
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {EVENT_STATUS_CONFIG[s].label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {/* Start Time */}
-              <div className="space-y-2">
-                <Label htmlFor="start_time">Start Time</Label>
+                <Label htmlFor="end_date">End Date</Label>
                 <DateTimePicker
-                  id="start_time"
-                  value={watch("start_time")}
+                  id="end_date"
+                  includeTime={false}
+                  value={watch("end_date")}
                   onChange={(val) =>
-                    setValue("start_time", val, { shouldValidate: true })
+                    setValue("end_date", val, { shouldValidate: true })
                   }
-                  placeholder="Select start time"
+                  placeholder="Pick end date"
                 />
-                {errors.start_time && (
+                {errors.end_date && (
                   <p className="text-caption-1 text-ios-red">
-                    {errors.start_time.message}
-                  </p>
-                )}
-              </div>
-
-              {/* End Time */}
-              <div className="space-y-2">
-                <Label htmlFor="end_time">End Time</Label>
-                <DateTimePicker
-                  id="end_time"
-                  value={watch("end_time")}
-                  onChange={(val) =>
-                    setValue("end_time", val, { shouldValidate: true })
-                  }
-                  placeholder="Select end time"
-                />
-                {errors.end_time && (
-                  <p className="text-caption-1 text-ios-red">
-                    {errors.end_time.message}
+                    {errors.end_date.message}
                   </p>
                 )}
               </div>
             </div>
 
+            {/* Status */}
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={currentStatus ?? "draft"}
+                onValueChange={(val) =>
+                  setValue("status", val as EventLifecycleStatus, {
+                    shouldValidate: true,
+                  })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
             <div className="grid gap-4 sm:grid-cols-2">
-              {/* Speaker */}
+              {/* Venue */}
               <div className="space-y-2">
-                <Label htmlFor="speaker">Speaker</Label>
-                <Input
-                  id="speaker"
-                  placeholder="e.g. Dr. Tendai Moyo"
-                  {...register("speaker")}
-                />
-                {errors.speaker && (
+                <Label htmlFor="venue_id">Venue</Label>
+                <Select
+                  value={currentVenueId || ""}
+                  onValueChange={(val) =>
+                    setValue("venue_id", val || "", { shouldValidate: true })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a venue">
+                      {currentVenueId
+                        ? venues.find((v) => v.id === currentVenueId)?.name || currentVenueId
+                        : "Select a venue"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No venue assigned</SelectItem>
+                    {venues.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.venue_id && (
                   <p className="text-caption-1 text-ios-red">
-                    {errors.speaker.message}
+                    {errors.venue_id.message}
                   </p>
                 )}
               </div>
 
-              {/* Capacity */}
+              {/* Order Prefix */}
               <div className="space-y-2">
-                <Label htmlFor="capacity">Capacity</Label>
+                <Label htmlFor="order_prefix">Order Prefix</Label>
+                <Input id="order_prefix" placeholder="EVT" {...register("order_prefix")} />
+                {errors.order_prefix && (
+                  <p className="text-caption-1 text-ios-red">
+                    {errors.order_prefix.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Country */}
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input id="country" placeholder="e.g. Zimbabwe" {...register("country")} />
+              </div>
+
+              {/* City */}
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input id="city" placeholder="e.g. Bulawayo" {...register("city")} />
+              </div>
+            </div>
+
+            {/* Address */}
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input id="address" placeholder="Street address" {...register("address")} />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Latitude */}
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude</Label>
                 <Input
-                  id="capacity"
+                  id="latitude"
                   type="number"
-                  min={0}
-                  placeholder="e.g. 300"
-                  {...register("capacity")}
+                  step="any"
+                  placeholder="e.g. -20.15"
+                  {...register("latitude")}
                 />
-                {errors.capacity && (
+                {errors.latitude && (
                   <p className="text-caption-1 text-ios-red">
-                    {errors.capacity.message}
+                    {errors.latitude.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Longitude */}
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  placeholder="e.g. 28.58"
+                  {...register("longitude")}
+                />
+                {errors.longitude && (
+                  <p className="text-caption-1 text-ios-red">
+                    {errors.longitude.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Cover Image */}
+              <div className="space-y-2">
+                <Label>Cover Image</Label>
+                <FileUpload
+                  accept="image/*"
+                  maxSizeMB={4}
+                  preview={coverPreview}
+                  onFileSelect={handleCoverUpload}
+                  onRemove={handleCoverRemove}
+                  label={isUploadingCover ? "Uploading..." : "Upload cover image"}
+                />
+                {errors.cover_image_url && (
+                  <p className="text-caption-1 text-ios-red">
+                    {errors.cover_image_url.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Logo */}
+              <div className="space-y-2">
+                <Label>Logo</Label>
+                <FileUpload
+                  accept="image/*"
+                  maxSizeMB={2}
+                  preview={logoPreview}
+                  onFileSelect={handleLogoUpload}
+                  onRemove={handleLogoRemove}
+                  label={isUploadingLogo ? "Uploading..." : "Upload logo"}
+                />
+                {errors.logo_url && (
+                  <p className="text-caption-1 text-ios-red">
+                    {errors.logo_url.message}
                   </p>
                 )}
               </div>
@@ -326,13 +511,32 @@ export function EventEditForm({ event }: { event: EventData | null }) {
                   Cancel
                 </Button>
               </Link>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? <><Loader2 className="size-4 animate-spin" /> Saving...</> : "Save Changes"}
+              <Button
+                type="submit"
+                disabled={isSubmitting || isUploadingLogo || isUploadingCover}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Event"
+        description="Are you sure you want to delete this event? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

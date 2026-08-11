@@ -2,6 +2,7 @@ import { Users, MapPin, Calendar, BarChart3 } from "lucide-react";
 import { getDashboardStats } from "@/services/analytics.service";
 import { getGroundsMapData } from "@/services/map.service";
 import { PageHeader } from "@/components/layout/page-header";
+import { APP_CONFIG } from "@/lib/app-config";
 import { StatCard } from "@/components/shared/stat-card";
 import { ChartCard } from "@/components/shared/chart-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -34,7 +35,7 @@ export default async function OverviewPage() {
     <div className="space-y-6">
       <PageHeader
         title="Overview"
-        description="Your ZITF administration dashboard at a glance"
+        description={`Your ${APP_CONFIG.appName} administration dashboard at a glance`}
       />
 
       {/* Stat cards grid */}
@@ -75,10 +76,10 @@ export default async function OverviewPage() {
         />
       </div>
 
-      {/* ZITF Grounds Map */}
+      {/* Grounds Map */}
       <Card className="ios-card">
         <CardHeader>
-          <CardTitle className="text-headline">ZITF Grounds Map</CardTitle>
+          <CardTitle className="text-headline">{APP_CONFIG.venueLabel}</CardTitle>
           <CardDescription>
             Interactive overview of halls, stands, and exhibitors
           </CardDescription>

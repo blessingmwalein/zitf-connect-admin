@@ -18,6 +18,10 @@ interface DateTimePickerProps {
   onChange: (value: string) => void;
   placeholder?: string;
   id?: string;
+  /** When false, hides the time row and emits a plain "yyyy-MM-dd" value
+   *  instead of a datetime-local string — for date-only columns. Defaults
+   *  to true so existing datetime callers are unaffected. */
+  includeTime?: boolean;
 }
 
 export function DateTimePicker({
@@ -25,6 +29,7 @@ export function DateTimePicker({
   onChange,
   placeholder = "Pick date & time",
   id,
+  includeTime = true,
 }: DateTimePickerProps) {
   const [open, setOpen] = useState(false);
 
@@ -34,6 +39,11 @@ export function DateTimePicker({
 
   function handleDateSelect(day: Date | undefined) {
     if (!day) return;
+    if (!includeTime) {
+      onChange(format(day, "yyyy-MM-dd"));
+      setOpen(false);
+      return;
+    }
     const hours = dateValue && isValid(dateValue) ? dateValue.getHours() : 9;
     const minutes = dateValue && isValid(dateValue) ? dateValue.getMinutes() : 0;
     day.setHours(hours, minutes, 0, 0);
@@ -66,7 +76,9 @@ export function DateTimePicker({
       >
         <CalendarIcon className="size-4 text-muted-foreground" />
         {dateValue && isValid(dateValue) ? (
-          <span>{format(dateValue, "MMM d, yyyy  HH:mm")}</span>
+          <span>
+            {format(dateValue, includeTime ? "MMM d, yyyy  HH:mm" : "MMM d, yyyy")}
+          </span>
         ) : (
           <span>{placeholder}</span>
         )}
@@ -78,15 +90,17 @@ export function DateTimePicker({
           onSelect={handleDateSelect}
           className="p-3"
         />
-        <div className="border-t px-3 py-2">
-          <label className="text-caption-1 text-muted-foreground">Time</label>
-          <Input
-            type="time"
-            value={timeStr}
-            onChange={handleTimeChange}
-            className="mt-1 h-8"
-          />
-        </div>
+        {includeTime && (
+          <div className="border-t px-3 py-2">
+            <label className="text-caption-1 text-muted-foreground">Time</label>
+            <Input
+              type="time"
+              value={timeStr}
+              onChange={handleTimeChange}
+              className="mt-1 h-8"
+            />
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

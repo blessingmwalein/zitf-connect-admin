@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 import { MobileNavSheet } from "@/components/layout/mobile-nav-sheet";
+import { EventSwitcher } from "@/components/layout/event-switcher";
 import { NAV_ITEMS } from "@/lib/constants";
 
 export function AppBar() {
@@ -27,8 +28,9 @@ export function AppBar() {
         <h1 className="text-headline text-foreground">{pageTitle}</h1>
       </div>
 
-      {/* Right: Theme toggle + user menu */}
+      {/* Right: Event switcher + theme toggle + user menu */}
       <div className="flex items-center gap-2">
+        <EventSwitcher />
         <ThemeToggle />
         <UserMenu />
       </div>

@@ -13,9 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { EVENT_STATUS_CONFIG, type EventStatus } from "@/lib/constants";
+import { AGENDA_SESSION_STATUS_CONFIG, type AgendaSessionStatus } from "@/lib/constants";
 
-interface EventDetailModalProps {
+interface AgendaSessionDetailModalProps {
   event: {
     id: string;
     name: string;
@@ -24,7 +24,7 @@ interface EventDetailModalProps {
     hall_name: string;
     start_time: string;
     end_time: string;
-    status: EventStatus;
+    status: AgendaSessionStatus;
     speaker: string;
     capacity: number;
   } | null;
@@ -32,10 +32,10 @@ interface EventDetailModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function EventDetailModal({ event, open, onOpenChange }: EventDetailModalProps) {
+export function AgendaSessionDetailModal({ event, open, onOpenChange }: AgendaSessionDetailModalProps) {
   if (!event) return null;
 
-  const statusConfig = EVENT_STATUS_CONFIG[event.status];
+  const statusConfig = AGENDA_SESSION_STATUS_CONFIG[event.status];
   const startDate = new Date(event.start_time);
   const endDate = new Date(event.end_time);
 
@@ -115,7 +115,7 @@ export function EventDetailModal({ event, open, onOpenChange }: EventDetailModal
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-          <Link href={`/events/${event.id}`}>
+          <Link href={`/programme/${event.id}`}>
             <Button className="gap-1.5">
               <Pencil className="size-4" />
               Edit

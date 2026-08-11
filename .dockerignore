@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+coverage
+.git
+.gitignore
+.env
+.env.*
+*.md
+.vercel
+*.tsbuildinfo
+.vscode
+.idea
+.claude
+npm-debug.log*

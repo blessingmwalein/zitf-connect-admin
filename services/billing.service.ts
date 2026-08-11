@@ -1,15 +1,17 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { DEFAULT_EVENT_ID } from "@/lib/app-config";
 
 export async function getOrders(opts?: {
   status?: string;
   search?: string;
   page?: number;
   pageSize?: number;
+  eventId?: string;
 }) {
   const supabase = await createClient();
+  const eventId = opts?.eventId ?? DEFAULT_EVENT_ID;
   const page = opts?.page ?? 1;
   const pageSize = opts?.pageSize ?? 20;
   const from = (page - 1) * pageSize;
@@ -19,6 +21,7 @@ export async function getOrders(opts?: {
   let query = (supabase as any)
     .from("orders")
     .select("*, order_items(quantity, subtotal, ticket_types(name)), payments(status, payment_method, paid_at)", { count: "exact" })
+    .eq("event_id", eventId)
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -42,8 +45,10 @@ export async function getPayments(opts?: {
   status?: string;
   page?: number;
   pageSize?: number;
+  eventId?: string;
 }) {
   const supabase = await createClient();
+  const eventId = opts?.eventId ?? DEFAULT_EVENT_ID;
   const page = opts?.page ?? 1;
   const pageSize = opts?.pageSize ?? 20;
   const from = (page - 1) * pageSize;
@@ -53,6 +58,7 @@ export async function getPayments(opts?: {
   let query = (supabase as any)
     .from("payments")
     .select("*, orders(order_number, user_email, user_type)", { count: "exact" })
+    .eq("event_id", eventId)
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -61,17 +67,17 @@ export async function getPayments(opts?: {
   return query as Promise<{ data: Record<string, unknown>[] | null; count: number | null; error: unknown }>;
 }
 
-export async function getBillingStats() {
+export async function getBillingStats(eventId: string = DEFAULT_EVENT_ID) {
   const supabase = await createClient();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;
 
   const [ordersResult, paymentsResult, ticketsResult, revenueResult] = await Promise.all([
-    sb.from("orders").select("id", { count: "exact", head: true }),
-    sb.from("payments").select("id", { count: "exact", head: true }).eq("status", "paid"),
-    sb.from("tickets").select("id", { count: "exact", head: true }),
-    sb.from("payments").select("amount").eq("status", "paid"),
+    sb.from("orders").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    sb.from("payments").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("status", "paid"),
+    sb.from("tickets").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+    sb.from("payments").select("amount").eq("event_id", eventId).eq("status", "paid"),
   ]);
 
   const totalRevenue = (revenueResult.data || []).reduce(
@@ -87,12 +93,13 @@ export async function getBillingStats() {
   };
 }
 
-export async function getRecentPayments(limit = 10) {
+export async function getRecentPayments(limit = 10, eventId: string = DEFAULT_EVENT_ID) {
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (supabase as any)
     .from("payments")
     .select("*, orders(order_number, user_email)")
+    .eq("event_id", eventId)
     .order("created_at", { ascending: false })
     .limit(limit) as Promise<{ data: Record<string, unknown>[] | null; error: unknown }>;
 }

@@ -5,7 +5,7 @@ import { format, isSameDay } from "date-fns";
 import { Clock, MapPin, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { EVENT_STATUS_CONFIG, type EventStatus } from "@/lib/constants";
+import { AGENDA_SESSION_STATUS_CONFIG, type AgendaSessionStatus } from "@/lib/constants";
 
 interface ScheduleEvent {
   id: string;
@@ -14,7 +14,7 @@ interface ScheduleEvent {
   hall_name: string;
   start_time: string;
   end_time: string;
-  status: EventStatus;
+  status: AgendaSessionStatus;
   speaker: string;
 }
 
@@ -63,7 +63,7 @@ export function ScheduleView({ events, onEventClick }: ScheduleViewProps) {
 
           <div className="space-y-2 ml-4 border-l-2 border-border pl-4">
             {group.events.map((event) => {
-              const statusConfig = EVENT_STATUS_CONFIG[event.status];
+              const statusConfig = AGENDA_SESSION_STATUS_CONFIG[event.status];
               const startDate = new Date(event.start_time);
               const endDate = new Date(event.end_time);
 
